@@ -1,0 +1,4 @@
+/netlify/*     /index.html   404!
+/package.json  /index.html   404!
+/netlify.toml  /index.html   404!
+/config.js.bak /index.html   404!

@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="config.js"></script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'self'; form-action 'self'">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viraj International Academy — Form Tutor Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+/* ── DESIGN TOKENS ── */
+:root {
+--bg: #08090e;
+--surface: #0f1117;
+--surface2: #161b27;
+--surface3: #1d2436;
+--border: rgba(255,255,255,0.07);
+--border2: rgba(255,255,255,0.12);
+--accent: #4f8ef7;
+--accent-g: #00e5a0;
+--accent-p: #a259ff;
+--accent-o: #ff7240;
+--danger: #ff3355;
+--warn: #f7b731;
+--text: #e8eaf6;
+--text-2: #9299b8;
+--text-3: #5a6080;
+--glow-b: rgba(79,142,247,0.15);
+--glow-g: rgba(0,229,160,0.15);
+--glow-p: rgba(162,89,255,0.15);
+--radius: 14px;
+--radius-lg: 20px;
+--shadow: 0 8px 40px rgba(0,0,0,0.5);
+--font: 'Inter', system-ui, sans-serif;
+--mono: 'JetBrains Mono', monospace;
+--sidebar: 260px;
+--header: 60px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+font-family: var(--font);
+background: var(--bg);
+color: var(--text);
+min-height: 100vh;
+line-height: 1.6;
+-webkit-font-smoothing: antialiased;
+background-image:
+radial-gradient(ellipse 60% 40% at 10% 5%, rgba(79,142,247,0.06) 0%, transparent 70%),
+radial-gradient(ellipse 50% 50% at 90% 90%, rgba(162,89,255,0.05) 0%, transparent 70%);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 10px; }
+
+/* ── HEADER ── */
+header {
+height: var(--header);
+display: flex; align-items: center; justify-content: space-between;
+padding: 0 24px;
+background: rgba(8,9,14,0.9);
+backdrop-filter: blur(20px);
+border-bottom: 1px solid var(--border);
+position: sticky; top: 0; z-index: 200;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo-mark {
+width: 34px; height: 34px;
+background: linear-gradient(135deg, var(--accent), var(--accent-p));
+border-radius: 9px;
+display: flex; align-items: center; justify-content: center;
+font-size: 16px;
+box-shadow: 0 0 20px var(--glow-b);
+}
+.logo-name {
+font-size: 1rem; font-weight: 800; letter-spacing: -0.5px;
+background: linear-gradient(90deg, var(--text), var(--accent));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.logo-name em { font-style: normal; -webkit-text-fill-color: var(--text-2); font-weight: 400; }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.api-status-pill {
+display: flex; align-items: center; gap: 7px;
+padding: 6px 14px; border-radius: 20px;
+border: 1px solid var(--border);
+background: var(--surface2);
+font-size: 0.75rem; color: var(--text-2);
+cursor: pointer; transition: all 0.2s;
+}
+.api-status-pill:hover { border-color: var(--accent); color: var(--accent); }
+.status-dot {
+width: 6px; height: 6px; border-radius: 50%;
+background: var(--text-3); transition: all 0.3s;
+}
+.status-dot.live { background: var(--accent-g); box-shadow: 0 0 8px var(--accent-g); }
+.status-dot.error { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+.chip-badge {
+padding: 5px 12px; border-radius: 20px;
+background: linear-gradient(90deg, var(--accent-p), var(--accent));
+font-size: 0.68rem; font-weight: 700; letter-spacing: 1px;
+color: #fff; text-transform: uppercase;
+}
+
+/* ── LAYOUT ── */
+.app-shell {
+display: grid;
+grid-template-columns: var(--sidebar) 1fr;
+min-height: calc(100vh - var(--header));
+}
+
+/* ── SIDEBAR ── */
+aside {
+background: var(--surface);
+border-right: 1px solid var(--border);
+padding: 16px 12px;
+display: flex; flex-direction: column; gap: 4px;
+position: sticky; top: var(--header);
+height: calc(100vh - var(--header));
+overflow-y: auto;
+}
+.nav-section {
+font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+color: var(--text-3); text-transform: uppercase;
+padding: 10px 12px 5px; margin-top: 6px;
+}
+.nav-item {
+display: flex; align-items: center; gap: 10px;
+padding: 10px 12px; border-radius: var(--radius);
+border: 1px solid transparent;
+background: transparent; color: var(--text-2);
+font-family: var(--font); font-size: 0.85rem; font-weight: 500;
+cursor: pointer; transition: all 0.18s; text-align: left; width: 100%;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active {
+background: var(--surface3);
+border-color: var(--border2);
+color: var(--text);
+}
+.nav-item .ni {
+width: 28px; height: 28px; border-radius: 8px;
+display: flex; align-items: center; justify-content: center;
+font-size: 14px; flex-shrink: 0;
+background: var(--surface3);
+}
+.nav-item.active .ni { background: linear-gradient(135deg, var(--accent), var(--accent-p)); }
+.nav-item.merge-item.active .ni { background: linear-gradient(135deg, var(--accent-o), #e05a1a); }
+.nav-item .n-label { flex: 1; }
+.nav-item .n-badge {
+font-size: 0.62rem; padding: 2px 7px; border-radius: 10px;
+background: linear-gradient(90deg, var(--accent-o), #e05a1a);
+color: #fff; font-weight: 700;
+}
+
+/* ── MAIN ── */
+main { padding: 32px; overflow-y: auto; max-width: 1200px; }
+
+/* ── PANEL ── */
+.panel { display: none; animation: slideUp 0.25s ease; }
+.panel.active { display: block; }
+@keyframes slideUp {
+from { opacity: 0; transform: translateY(12px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.panel-header { margin-bottom: 28px; }
+.panel-title {
+font-size: 1.75rem; font-weight: 800; letter-spacing: -0.8px;
+background: linear-gradient(135deg, var(--text) 60%, var(--accent));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+line-height: 1.2; margin-bottom: 6px;
+}
+.panel-sub { color: var(--text-2); font-size: 0.88rem; }
+
+/* ── FORMS ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.form-grid.col3 { grid-template-columns: repeat(3, 1fr); }
+.fg-full { grid-column: 1/-1; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
+color: var(--text-2); text-transform: uppercase;
+}
+input[type=text], input[type=password], input[type=number], input[type=email],
+textarea, select {
+background: var(--surface2);
+border: 1px solid var(--border);
+color: var(--text);
+font-family: var(--font); font-size: 0.88rem;
+border-radius: var(--radius); padding: 11px 14px;
+outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
+resize: none;
+}
+input:focus, textarea:focus, select:focus {
+border-color: var(--accent);
+box-shadow: 0 0 0 3px var(--glow-b);
+}
+select option { background: var(--surface2); }
+textarea { resize: vertical; }
+
+/* ── BUTTONS ── */
+.btn {
+display: inline-flex; align-items: center; gap: 7px;
+padding: 11px 20px; border-radius: var(--radius);
+border: none; font-family: var(--font); font-weight: 600;
+font-size: 0.85rem; cursor: pointer; transition: all 0.18s;
+white-space: nowrap;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+background: linear-gradient(135deg, var(--accent), #3a7de8);
+color: #fff; box-shadow: 0 4px 20px rgba(79,142,247,0.3);
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(79,142,247,0.45); }
+.btn-ghost {
+background: var(--surface2); color: var(--text-2);
+border: 1px solid var(--border);
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--border2); color: var(--text); }
+.btn-success {
+background: linear-gradient(135deg, var(--accent-g), #00b377);
+color: #000; font-weight: 700;
+}
+.btn-danger { background: rgba(255,51,85,0.15); color: var(--danger); border: 1px solid rgba(255,51,85,0.3); }
+.btn-orange {
+background: linear-gradient(135deg, var(--accent-o), #e05a1a);
+color: #fff; box-shadow: 0 4px 20px rgba(255,114,64,0.3);
+}
+.btn-orange:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-sm { padding: 7px 14px; font-size: 0.78rem; }
+.btn-xs { padding: 4px 10px; font-size: 0.72rem; border-radius: 8px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── CARDS ── */
+.card {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);
+padding: 20px;
+}
+.card-accent { border-top: 2px solid var(--accent); }
+.card-orange { border-top: 2px solid var(--accent-o); }
+
+/* ── RESULT BOX ── */
+.result-box {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);
+padding: 22px; font-size: 0.88rem;
+line-height: 1.85; white-space: pre-wrap;
+color: var(--text); min-height: 80px; margin-top: 18px;
+}
+.result-box.loading { color: var(--text-2); font-style: italic; }
+
+/* ── TAGS / CHIPS ── */
+.tag {
+display: inline-flex; align-items: center; gap: 4px;
+padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+}
+.tag-blue { background: rgba(79,142,247,0.12); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
+.tag-green { background: rgba(0,229,160,0.1); color: var(--accent-g); border: 1px solid rgba(0,229,160,0.25); }
+.tag-red { background: rgba(255,51,85,0.1); color: var(--danger); border: 1px solid rgba(255,51,85,0.25); }
+.tag-orange { background: rgba(255,114,64,0.1); color: var(--accent-o); border: 1px solid rgba(255,114,64,0.25); }
+
+/* ── MODAL ── */
+.modal-overlay {
+position: fixed; inset: 0; z-index: 1000;
+background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+display: flex; align-items: center; justify-content: center;
+animation: fadeIn 0.2s;
+}
+.modal-overlay.hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+background: var(--surface);
+border: 1px solid var(--border2);
+border-radius: var(--radius-lg);
+padding: 36px; width: 90%; max-width: 500px;
+box-shadow: var(--shadow);
+animation: slideUp 0.25s ease;
+}
+.modal h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+.modal p { font-size: 0.85rem; color: var(--text-2); margin-bottom: 20px; line-height: 1.7; }
+
+/* ── STATUS BAR ── */
+.status-toast {
+position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+padding: 12px 20px; border-radius: var(--radius);
+font-size: 0.82rem; font-weight: 600;
+box-shadow: var(--shadow); transition: opacity 0.4s;
+pointer-events: none;
+}
+.status-toast.info { background: var(--surface2); color: var(--text-2); border: 1px solid var(--border); }
+.status-toast.ok { background: #0d2e1e; color: var(--accent-g); border: 1px solid rgba(0,229,160,0.4); }
+.status-toast.err { background: #2e0d14; color: var(--danger); border: 1px solid rgba(255,51,85,0.4); }
+
+/* ── CHAT ── */
+.chat-window {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);
+height: 440px; overflow-y: auto;
+padding: 20px; display: flex; flex-direction: column; gap: 14px;
+margin-bottom: 14px; scroll-behavior: smooth;
+}
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { flex-direction: row-reverse; }
+.msg-av {
+width: 32px; height: 32px; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-size: 13px; flex-shrink: 0;
+}
+.msg.ai .msg-av { background: linear-gradient(135deg, var(--accent), var(--accent-p)); }
+.msg.user .msg-av { background: linear-gradient(135deg, var(--accent-g), #009966); }
+.msg-bub {
+max-width: 75%; padding: 12px 16px; border-radius: 14px;
+font-size: 0.87rem; line-height: 1.65; white-space: pre-wrap;
+}
+.msg.ai .msg-bub { background: var(--surface2); border: 1px solid var(--border); }
+.msg.user .msg-bub {
+background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(162,89,255,0.12));
+border: 1px solid rgba(79,142,247,0.25);
+}
+.typing { display: flex; gap: 5px; padding: 4px 0; }
+.typing span {
+width: 6px; height: 6px; border-radius: 50%;
+background: var(--accent); animation: bounce 1.2s infinite;
+}
+.typing span:nth-child(2) { animation-delay: .2s; }
+.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce { 0%,80%,100%{transform:scale(0.8);opacity:.5} 40%{transform:scale(1.2);opacity:1} }
+.chat-input-row { display: flex; gap: 10px; }
+.quick-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.qchip {
+padding: 6px 14px; border-radius: 20px;
+background: var(--surface2); border: 1px solid var(--border);
+color: var(--text-2); font-size: 0.78rem; cursor: pointer; transition: all 0.18s;
+}
+.qchip:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
+
+/* ── QUIZ ── */
+.quiz-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 16px; }
+.quiz-qnum { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
+.quiz-qtext { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt {
+padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--border);
+background: var(--surface2); color: var(--text); cursor: pointer;
+font-family: var(--font); font-size: 0.87rem; transition: all 0.18s; text-align: left;
+}
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(79,142,247,0.08); }
+.quiz-opt.correct { border-color: var(--accent-g); background: rgba(0,229,160,0.08); color: var(--accent-g); }
+.quiz-opt.wrong { border-color: var(--danger); background: rgba(255,51,85,0.08); color: var(--danger); }
+.score-pill {
+display: inline-flex; align-items: center; gap: 6px;
+padding: 6px 16px; border-radius: 20px;
+background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.3);
+color: var(--accent-g); font-weight: 700; font-size: 0.92rem; margin-bottom: 14px;
+}
+
+/* ── KAHOOT ── */
+.kahoot-banner {
+background: linear-gradient(135deg, #46178f, #6b2fa0);
+border-radius: var(--radius-lg); padding: 28px; margin-bottom: 24px;
+position: relative; overflow: hidden;
+}
+.kahoot-banner::after {
+content: '🎮'; position: absolute; right: 24px; top: 50%;
+transform: translateY(-50%); font-size: 56px; opacity: 0.25;
+}
+.kahoot-banner h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
+.kahoot-banner p { font-size: 0.85rem; opacity: 0.75; max-width: 480px; }
+.kahoot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.kbtn {
+border-radius: var(--radius); padding: 18px;
+font-weight: 700; font-size: 0.92rem; cursor: pointer;
+border: none; color: #fff; transition: transform 0.15s;
+display: flex; flex-direction: column; gap: 6px;
+}
+.kbtn:hover { transform: scale(1.02); }
+.kbtn span { font-size: 1.5rem; }
+.k-red { background: linear-gradient(135deg,#e21b3c,#b01); }
+.k-blue { background: linear-gradient(135deg,#1368ce,#0a40a0); }
+.k-yellow { background: linear-gradient(135deg,#d89e00,#aa7800); }
+.k-green { background: linear-gradient(135deg,#26890c,#186006); }
+.kahoot-q-display { background: #46178f; border-radius: var(--radius); padding: 20px; text-align: center; margin-bottom: 14px; }
+.kahoot-timer { font-family: var(--mono); font-size: 2.5rem; font-weight: 700; color: var(--accent-g); text-align: center; margin: 8px 0; }
+.kahoot-result { background: var(--surface); border: 1px solid rgba(70,23,143,0.4); border-radius: var(--radius-lg); padding: 20px; white-space: pre-wrap; font-size: 0.87rem; line-height: 1.85; }
+
+/* ── STUDENTS ── */
+.summary-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+.summ-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; text-align: center; }
+.summ-val { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+.summ-lbl { font-size: 0.72rem; color: var(--text-2); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin-bottom: 24px; }
+.student-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; transition: border-color 0.2s; }
+.student-card:hover { border-color: var(--border2); }
+.sc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.sc-avatar {
+width: 38px; height: 38px; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-size: 14px; font-weight: 800; flex-shrink: 0;
+background: linear-gradient(135deg, var(--accent), var(--accent-p));
+}
+.sc-name { font-weight: 700; font-size: 0.92rem; }
+.sc-meta { font-size: 0.72rem; color: var(--text-2); }
+.sc-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.stat-tag {
+padding: 3px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+background: var(--surface2); border: 1px solid var(--border);
+}
+.stat-tag.good { border-color: rgba(0,229,160,0.3); color: var(--accent-g); background: rgba(0,229,160,0.08); }
+.stat-tag.warn { border-color: rgba(247,183,49,0.3); color: var(--warn); background: rgba(247,183,49,0.08); }
+.stat-tag.poor { border-color: rgba(255,51,85,0.3); color: var(--danger); background: rgba(255,51,85,0.08); }
+.sc-topics { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.topic-dot { padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; background: rgba(79,142,247,0.1); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); }
+.sc-note { font-size: 0.75rem; color: var(--text-2); font-style: italic; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+.sc-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+/* ── MAIL MERGE SPECIFIC ── */
+.merge-hero {
+background: linear-gradient(135deg, rgba(255,114,64,0.12), rgba(162,89,255,0.08));
+border: 1px solid rgba(255,114,64,0.2);
+border-radius: var(--radius-lg); padding: 28px; margin-bottom: 28px;
+position: relative; overflow: hidden;
+}
+.merge-hero::after {
+content: '🔀'; position: absolute; right: 28px; top: 50%;
+transform: translateY(-50%); font-size: 52px; opacity: 0.2;
+}
+.merge-hero h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; color: var(--accent-o); }
+.merge-hero p { font-size: 0.85rem; color: var(--text-2); max-width: 540px; }
+
+.merge-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 28px; }
+.merge-step {
+background: var(--surface); border: 1px solid var(--border);
+border-radius: var(--radius-lg); padding: 20px;
+position: relative; transition: border-color 0.2s;
+}
+.merge-step.done { border-color: rgba(0,229,160,0.3); }
+.merge-step.active-step { border-color: rgba(255,114,64,0.4); }
+.step-num {
+width: 28px; height: 28px; border-radius: 50%;
+background: var(--surface3); border: 1px solid var(--border);
+display: flex; align-items: center; justify-content: center;
+font-size: 0.75rem; font-weight: 700; font-family: var(--mono);
+margin-bottom: 10px; color: var(--text-2);
+}
+.merge-step.done .step-num { background: rgba(0,229,160,0.12); border-color: rgba(0,229,160,0.3); color: var(--accent-g); }
+.merge-step.active-step .step-num { background: rgba(255,114,64,0.12); border-color: rgba(255,114,64,0.3); color: var(--accent-o); }
+.step-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+.step-sub { font-size: 0.75rem; color: var(--text-2); }
+.step-status { font-size: 0.72rem; margin-top: 8px; }
+
+.upload-zone {
+border: 2px dashed var(--border2);
+border-radius: var(--radius); padding: 24px 16px;
+text-align: center; cursor: pointer;
+transition: all 0.2s; background: var(--surface2);
+}
+.upload-zone:hover, .upload-zone.dragover {
+border-color: var(--accent-o); background: rgba(255,114,64,0.06);
+}
+.upload-zone input[type=file] { display: none; }
+.upload-icon { font-size: 2rem; margin-bottom: 8px; }
+.upload-label { font-size: 0.85rem; color: var(--text-2); margin-bottom: 4px; }
+.upload-sub { font-size: 0.72rem; color: var(--text-3); }
+.upload-done { font-size: 0.82rem; color: var(--accent-g); font-weight: 600; }
+
+.template-area {
+background: var(--surface2);
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);
+padding: 20px; margin-bottom: 20px;
+font-size: 0.87rem; line-height: 1.8;
+min-height: 220px; position: relative;
+}
+.template-area .placeholder-hint {
+color: var(--text-3); font-style: italic;
+text-align: center; padding: 40px 20px;
+}
+
+.field-palette {
+display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+}
+.field-chip {
+display: inline-flex; align-items: center; gap: 5px;
+padding: 6px 12px; border-radius: 8px;
+background: rgba(255,114,64,0.1); border: 1px solid rgba(255,114,64,0.3);
+color: var(--accent-o); font-size: 0.78rem; font-weight: 600;
+cursor: grab; font-family: var(--mono); transition: all 0.18s;
+user-select: none;
+}
+.field-chip:hover { background: rgba(255,114,64,0.2); transform: translateY(-1px); }
+.field-chip:active { cursor: grabbing; }
+
+.merge-editor {
+background: #fff; color: #111;
+border-radius: var(--radius); padding: 24px 28px;
+min-height: 280px; font-size: 0.9rem; line-height: 2;
+border: 1px solid var(--border2); position: relative;
+}
+.merge-editor [contenteditable] { outline: none; min-height: 200px; }
+.merge-placeholder {
+display: inline-flex; align-items: center; gap: 3px;
+background: #fff3e0; color: #e65100;
+border: 1px solid #ffb300; border-radius: 4px;
+padding: 1px 7px; font-size: 0.8rem; font-weight: 600;
+font-family: var(--mono); cursor: default;
+}
+
+.merge-preview-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.merge-preview-table th {
+background: var(--surface3); padding: 9px 12px; text-align: left;
+font-size: 0.78rem; border-bottom: 1px solid var(--border);
+}
+.merge-preview-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 0.83rem; }
+.merge-preview-table tr:hover td { background: var(--surface2); }
+
+.merge-result-item {
+background: var(--surface2); border: 1px solid var(--border);
+border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+display: flex; justify-content: space-between; align-items: center;
+}
+.saved-template-item {
+background: var(--surface2); border: 1px solid var(--border);
+border-radius: var(--radius); padding: 12px 16px; margin-bottom: 8px;
+display: flex; justify-content: space-between; align-items: center;
+cursor: pointer; transition: border-color 0.2s;
+}
+.saved-template-item:hover { border-color: rgba(255,114,64,0.4); }
+.saved-template-item.selected { border-color: var(--accent-o); background: rgba(255,114,64,0.07); }
+
+/* ── SETTINGS ── */
+.settings-section { margin-bottom: 28px; }
+.settings-section h3 { font-size: 0.85rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+.brand-preview {
+background: var(--surface2); border: 1px solid var(--border);
+border-radius: var(--radius-lg); padding: 20px; margin-top: 14px;
+}
+
+/* ── PRINT ── */
+@media print {
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { background: #fff !important; color: #111 !important; }
+header, aside, .result-actions, .quick-chips, .chat-input-row,
+.modal-overlay, .status-toast { display: none !important; }
+.app-shell { display: block !important; }
+main { padding: 0 !important; }
+.panel { display: none !important; }
+#print-area {
+display: block !important; padding: 32px 40px;
+max-width: 780px; margin: 0 auto;
+}
+#print-area .p-school { font-size:0.85rem;font-weight:800;letter-spacing:1px;text-transform:uppercase; }
+#print-area .p-motto { font-size:0.75rem;color:#777;margin-bottom:12px; }
+#print-area .p-div { height:4px;border-radius:2px;margin-bottom:16px; }
+#print-area h1 { font-size:1.55rem;font-weight:800;padding-bottom:10px;margin-bottom:6px; }
+#print-area .p-meta { font-size:0.8rem;color:#555;margin-bottom:22px;display:flex;gap:16px;flex-wrap:wrap; }
+#print-area .p-meta span { font-weight:700; }
+#print-area .p-body { font-size:0.9rem;line-height:1.9;color:#222;white-space:pre-wrap; }
+#print-area .p-footer { margin-top:40px;padding-top:12px;border-top:1px solid #ccc;font-size:0.72rem;color:#888;display:flex;justify-content:space-between; }
+#print-area table { width:100%;border-collapse:collapse;font-size:0.82rem; }
+#print-area th { background:#f4f4f8;padding:8px 10px;text-align:left;border-bottom:2px solid #e0e0e0; }
+#print-area td { padding:7px 10px;border-bottom:1px solid #eee;vertical-align:top; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+:root { --sidebar: 0px; }
+.app-shell { grid-template-columns: 1fr; }
+aside { display: flex; flex-direction: row; overflow-x: auto; height: auto; position: relative; top: 0; }
+.nav-section { display: none; }
+.nav-item { min-width: max-content; }
+.form-grid, .form-grid.col3 { grid-template-columns: 1fr; }
+.merge-steps, .summary-grid { grid-template-columns: 1fr; }
+.kahoot-grid { grid-template-columns: 1fr; }
+}
+
+/* ── MISC ── */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+.text-muted { color: var(--text-2); }
+.text-sm { font-size: 0.82rem; }
+.mono { font-family: var(--mono); }
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-2 { gap: 8px; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.hidden { display: none !important; }
+.glow-text { text-shadow: 0 0 20px var(--accent); }
+
+/* API Key modal extras */
+.key-input-wrap { position: relative; }
+.key-input-wrap input { font-family: var(--mono); font-size: 0.82rem; padding-right: 44px; }
+.key-vis-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-2); font-size: 1rem; }
+.key-status { font-size: 0.78rem; padding: 9px 13px; border-radius: 9px; margin-bottom: 16px; display: none; }
+.key-status.ok { background: rgba(0,229,160,0.1); color: var(--accent-g); border: 1px solid rgba(0,229,160,0.3); display: block; }
+.key-status.err { background: rgba(255,51,85,0.08); color: var(--danger); border: 1px solid rgba(255,51,85,0.3); display: block; }
+.key-status.info { background: rgba(79,142,247,0.08); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); display: block; }
+
+/* Record modal */
+.rec-form { display: flex; flex-direction: column; gap: 14px; }
+.score-row { display: flex; gap: 10px; align-items: center; }
+.score-row input[type=number] { max-width: 90px; }
+.topics-input-row { display: flex; gap: 8px; }
+.topics-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+.topic-rm {
+display: flex; align-items: center; gap: 4px;
+padding: 3px 10px; border-radius: 20px; font-size: 0.75rem;
+background: rgba(79,142,247,0.12); color: var(--accent);
+border: 1px solid rgba(79,142,247,0.3); cursor: pointer;
+}
+.topic-rm:hover { background: rgba(255,51,85,0.1); color: var(--danger); border-color: rgba(255,51,85,0.3); }
+
+/* Bulk area */
+.bulk-area { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.bulk-area label { font-size: 0.72rem; color: var(--text-2); font-weight: 700; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px}
+.form-row .field{flex:1;min-width:140px}
+.reg-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;flex-wrap:wrap}
+.reg-name{flex:1;min-width:140px;font-weight:600}
+.reg-btns{display:flex;gap:6px;flex-wrap:wrap}
+.reg-rate{min-width:48px;text-align:right;font-size:.78rem;color:var(--text-2)}
+.att-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-2);cursor:pointer;font:600 .76rem Inter,sans-serif}
+.att-btn.P.on{background:rgba(0,229,160,.15);color:var(--accent-g);border-color:var(--accent-g)}
+.att-btn.L.on{background:rgba(247,183,49,.15);color:var(--warn);border-color:var(--warn)}
+.att-btn.A.on{background:rgba(255,51,85,.12);color:var(--danger);border-color:var(--danger)}
+.att-btn.E.on{background:rgba(79,142,247,.15);color:var(--accent);border-color:var(--accent)}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.tbl{width:100%;border-collapse:collapse;font-size:.84rem}
+.tbl th{text-align:left;padding:10px 12px;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.tbl input{min-width:120px;padding:7px 10px}
+.beh-item{display:flex;gap:12px;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px}
+.beh-pts{font-weight:800;min-width:42px}
+.pos{color:var(--accent-g)}.neg{color:var(--danger)}
+.warn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px}
+:root{--bg:#f4f6fb;--surface:#fff;--surface2:#f1f4fa;--surface3:#dfe5f1;--border:rgba(0,60,130,.10);--border2:rgba(0,60,130,.18);--accent:#0a3d7a;--accent-g:#12a36b;--accent-p:#6b3fa0;--accent-o:#e08a00;--danger:#d93a4f;--warn:#c98a00;--text:#14213d;--text-2:#53607f;--text-3:#8a94ad;--glow-b:rgba(0,60,130,.12);--shadow:0 8px 30px rgba(0,60,130,.12);--gold:#ec5c28}
+body{background-image:none}
+header{background:linear-gradient(90deg,#0a3d7a,#0056ab);border-bottom:3px solid var(--gold)}
+.logo-mark{background:#fff;overflow:hidden;color:#0a3d7a;font-weight:900;box-shadow:none}.logo-mark img{width:100%;height:100%;object-fit:contain}
+.logo-name{background:none;-webkit-text-fill-color:#fff;color:#fff}.logo-name em{-webkit-text-fill-color:var(--gold)}
+header .btn-ghost{color:#fff;border-color:rgba(255,255,255,.35);background:transparent}
+header .chip-badge{background:rgba(255,255,255,.12);color:#fff;border-color:transparent}
+.btn-primary{background:linear-gradient(135deg,#0a3d7a,#1f6fc4);color:#fff}
+.nav-item.active .ni{background:var(--gold)}
+.summ-card,.student-card,.reg-row,.beh-item,.warn-row{box-shadow:0 2px 10px rgba(0,60,130,.06)}
+input[type=date],input[type=time]{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit}
+input.arr{padding:6px 8px}
+#auth{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#0a3d7a 0%,#0056ab 60%,#1f6fc4 100%);overflow:auto}
+.auth-card{width:100%;max-width:400px;background:#fff;border-radius:22px;padding:30px 28px;box-shadow:0 20px 60px rgba(0,0,0,.35);border-top:6px solid var(--gold);display:flex;flex-direction:column;gap:14px;text-align:center}
+.auth-logo{width:84px;height:84px;margin:0 auto;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:2.4rem;overflow:hidden}.auth-logo img{width:100%;height:100%;object-fit:contain}
+.auth-card h1{font-size:1.2rem;color:var(--accent)}.auth-card p{color:var(--text-2);font-size:.85rem;margin-top:-8px}.auth-card .field{text-align:left}
+#authTabs{display:flex;background:var(--surface2);border-radius:12px;padding:4px}
+#authTabs button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font:600 .85rem Inter,sans-serif;color:var(--text-2);cursor:pointer}
+#authTabs button.on{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,60,130,.12)}
+#aMsg{font-size:.82rem;min-height:1em}.auth-card a{font-size:.82rem;color:var(--accent);text-decoration:none}
+.ticker{flex:1;min-width:0;overflow:hidden;margin:0 24px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ticker-track{display:inline-flex;white-space:nowrap;animation:tick 30s linear infinite;color:var(--gold);font-weight:700;letter-spacing:2px;font-size:.8rem;text-transform:uppercase}
+@keyframes tick{to{transform:translateX(-50%)}}
+.m-motto{display:none;text-align:center;font-weight:800;letter-spacing:2px;font-size:.78rem;text-transform:uppercase;color:var(--accent);background:rgba(236,92,40,.18);border-radius:10px;padding:8px;margin-bottom:16px}
+@media(max-width:900px){.ticker{display:none}.m-motto{display:block}.cal-wrap{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){.ticker-track{animation:none}}
+.cal-wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;margin-bottom:24px}
+.cal-box,.cal-side{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:0 2px 10px rgba(0,60,130,.06)}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:.68rem;font-weight:700;color:var(--text-3);padding:4px 0}
+.cal-day-btn{min-height:44px;border:1px solid transparent;border-radius:10px;background:var(--surface2);color:var(--text);font:600 .82rem Inter,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.cal-day-btn:hover{border-color:var(--accent)}.cal-day-btn.today{box-shadow:inset 0 0 0 2px var(--gold)}.cal-day-btn.sel{background:var(--accent);color:#fff}
+.dots{font-size:.6rem;line-height:1;min-height:8px;display:flex;gap:3px;align-items:center}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block}.dots i.dn{background:var(--accent-g)}
+.cal-day{font-weight:700;color:var(--accent);margin:10px 0}
+.ev-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:10px;margin-bottom:6px;font-size:.85rem}
+.ev-item.done span{text-decoration:line-through;color:var(--text-3)}
+#fab{position:fixed;right:18px;bottom:18px;z-index:800;width:54px;height:54px;border-radius:50%;border:0;background:var(--gold);color:#0a3d7a;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 24px rgba(0,60,130,.35)}
+#fab:hover{transform:translateY(-2px)}
+#xModal{position:fixed;inset:0;z-index:900;background:rgba(0,60,130,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+#xModal.hidden{display:none!important}
+.x-card{background:#fff;border-radius:18px;padding:24px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px;border-top:5px solid var(--gold)}
+.x-card h3{color:var(--accent)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media print{#fab,#xModal,.ticker{display:none!important}}
+.auth-logo{width:190px;height:auto;border-radius:14px;background:#fff;font-size:2.4rem}.auth-logo img{height:auto;object-fit:contain}
+.auth-card h1{position:absolute;left:-9999px}.auth-card p{margin-top:0}
+.ticker-track{color:#fff}.logo-name em{-webkit-text-fill-color:#ffb596}
+.avatar-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:30px;padding:4px 14px 4px 4px;cursor:pointer;font:600 .8rem Inter,sans-serif;max-width:220px}
+.avatar-btn:hover{background:rgba(255,255,255,.24)}.avatar-btn #whoami{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av-sm{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.1rem;flex:none}
+.av-sm img,.av-big img{width:100%;height:100%;object-fit:cover}
+.av-big{width:84px;height:84px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:2.4rem;overflow:hidden;border:3px solid var(--gold);flex:none}
+.p-av{display:flex;align-items:center;gap:14px}.av-grid{display:flex;gap:6px;flex-wrap:wrap}
+.av-pick{width:40px;height:40px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);font-size:1.2rem;cursor:pointer}.av-pick:hover{border-color:var(--accent)}
+#pModal{position:fixed;inset:0;z-index:900;background:rgba(0,60,130,.55);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+#pModal.hidden{display:none!important}
+@media(max-width:600px){.avatar-btn #whoami{display:none}.avatar-btn{padding:4px}}
+#sModal{position:fixed;inset:0;z-index:1100;background:rgba(0,60,130,.6);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}#sModal.hidden{display:none!important}.s-card{background:#fff;border-radius:18px;padding:24px;max-width:620px;width:100%;max-height:92vh;overflow:auto;border-top:5px solid var(--gold)}.s-card ol{padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:.88rem;line-height:1.5}.s-card code{background:var(--surface2);padding:2px 6px;border-radius:6px}</style>
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAwFBMVEX///////7///v+//78//7//v/+/v/+/vz9/v/9/v3+/f38/f79/Pv9+/v6/fv6/Pvz8O/U5+/Z0Nmz2OeMy+bLusfEnKeCttV9ncjieVaqepBfgLBSaqogmNMbg8Yger4+cbdEabIxa7QQb7rxViO+SiyxOyauMh1yRJFcQ5qiLiFaKY1MXatQT6EdVqMGUqhAQZcHO48GQZcEV60FR54DQpgDP5UFPZMBPZYEO44DOo4BOYwCN4sDNYoEMoUAJ3/DuhM0AAACGklEQVR42u2V22KiMBRFkyAgglyEcCkCAqIyiraItSrK//9VExnLFOnlfdyPsBc7yTk5APDQ/yWuT9V+Cr+yEytCAEG2jQy63JATINB0wzA0Hsh9tnkzFACH2DtA7EPd8jyfyNOBLDdfVx3cE+S2n0Gq4Xnxtsjz/a6wkchdFymKA1adTh2111oWw2nUvtlsimK3319cJAqI79HtMrJDCU76fDy84cfb7Zb4i93rfl+5gqQgpFvWSAYEmDqK/DmDg8a2AY6EkIeK5cfrbKFRYIqB1No0MBrgcHohhOV7QZQtn66AozKwTVibD+BYkgzD8wmQmrNZkiTz0V05ZGAV101T4FSSDN2Po8w15zOiudleE2BEYBcNcD4TgiTgpAac+4IzQ95923wAl3M11iO7DpjNnzo6pD+U3bfi9ZZwuVRjDf+p/TM8YDvab6CEhPibQFS5I2dOlZgmz3W0oMCq4Sm/AVUVhmMdO0ni4IVJzrFDIlTXZU6OtSzP1SUKw1Xm2hibi+Wou8sZBWnr8uVIA/JoQoBVtqRaqB0tTsT2FKDl50N5KNaTSQ2kabpY3pehuTBAC+Ig8IMrEFJ/SgKEPviGoBepBlY1gIHMfOWHQIGqG9fAKstufvjN9OgByYqD2p+R9eDuI/23HhzS3ShaZc/PqYtVoPA/TShGAkizbNvGGiJtycKfh5pw80CR/eUclK4awMcf4aHf6x3/ClMkBg3CpgAAAABJRU5ErkJggg=="><meta name="theme-color" content="#0056ab"><meta name="description" content="Form Tutor Portal — Viraj International Academy. Read, Lead, Succeed."><meta name="robots" content="index, follow">
+<meta property="og:title" content="Viraj International Academy — Form Tutor Portal"><meta property="og:description" content="Read, Lead, Succeed. Secure portal for Viraj form tutors."><meta property="og:type" content="website"><meta property="og:image" content="https://via-form-tutor-management.netlify.app/viraj-logo.png">
+</head>
+<body>
+
+<div id="auth"><div class="auth-card">
+<div class="auth-logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAS0AAAFOCAMAAADkXbsoAAABIFBMVEX///////3///v///X+///9///7///+//v9//f5///4///4//r2///0///z//vw///p///f/////v/+/v/+/v7//vz//f///fv//vr+/fn+/fT9/f/9/f38/vz6/fz9/P/8/Pz/+v79+vP7+/v6+vr97+75/f/3+/75+f35+fn5+Pn59/X29vb1+/v09fb08/Tt+/3g+P3x8vPx8fHv7+/t7u7r6+vp5+nl5ubh4eHc29zU6e+65PjQ0NCqzOGnwNd5rsuagYg0kcUaisoSfMAVd7cJd75RdqdBarU3dK01ZJEZc7Ada54Lc7kJabDrVymyOyS2NyGKQVZSU6JUPo90NXgVUp0EU6kERJoEPpUJO4wEPI4COY4COIoDNIgDLYBii7hzAABR3ElEQVR42u2diUPa2BPHQUhISEICciTRgEQ5FMHEtnYrCHhQFlB+u9uu27o9/v//4jffl6CAInjUurtOdz2QI/lkZt7MvHkvgcCLvMiLvMiLvMiYhNnXIMkSJBgOe7/58gJoXDieI0lFdD1EYoYilsW46Tp7RH/BNUELEon4tEIhSxR5joClUvSYIEReaI1LKpICGAuSzWajUVmWo0RMFMUoiRh+QXQlQT2k66RavMg4ARWDRKxeaF2nBesjXCKxUkhkjvxVChJJMiN9QTRFS9CZbjFc0YxpmgaJDy39gmjCEgUI4eLhqkTO8GkRqWSa5AXROK2ITwujop7JZEAqQw6f6HHcC62p2FSKSVmLYgWTgi27ULATiTDHzBJSLJW4tY3NjbUXUB4tYiJVJUGwbZPRyuRWRBEeDHFEsVwLBJKrq2urqy+oQEuRyVtlg0s2KZcNXCSmIElvXu8QPyOTemE0RqtEDoovRbndmiTAh6VSS0uWJZG2QdUKe6lAMvmCaSTpcJgvOY6jqCSapqkK+8lxYgyYHVzb3N7eXHshBkmk07liiQi5rhuHuJ7gR42oVcOB5NrG+uoLLY9WPp/jFc3V4o1mq90+Gkm73W42GvG4s/EfAhWkQGopGEwwGT3mV67CHEcui8xQcxvNK07j0m436q6mRIu5RCIVXKLkG+8WRkpECSQ9lko88PgEClxMQV9KBDhudJDBpaXIkn/UT0orQqG5EKIMJp+nUDOZ5FD1M2jc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" alt="" onerror="this.replaceWith('🏫')"></div>
+<h1>Viraj International Academy</h1><p>Form Tutor Portal · <b style="color:var(--accent)">Read, Lead, Succeed</b></p>
+<div id="authTabs"><button class="on" onclick="authMode('in')">Sign in</button><button onclick="authMode('up')">Register</button></div>
+<div class="field"><label>Email</label><input type="email" id="aEmail" placeholder="School email, Gmail or Yahoo"></div>
+<div class="field" id="fPass"><label>Password</label><input type="password" id="aPass" onkeydown="if(event.key==='Enter')authGo()"></div>
+<div class="field hidden" id="fPass2"><label>Confirm password</label><input type="password" id="aPass2"></div>
+<div class="field hidden" id="fCode"><label>School access code</label><input type="password" id="aCode" placeholder="Provided by the ICT department"></div>
+<div id="aMsg"></div>
+<button class="btn btn-primary" id="aGo" onclick="authGo()">Sign in</button>
+<a href="#" id="aForgot" onclick="authMode('forgot');return false">Forgot password?</a>
+<a href="#" id="aBack" class="hidden" onclick="authMode('in');return false">← Back to sign in</a>
+<a href="#" id="aDiag" class="hidden" onclick="diagnose();return false" style="font-size:.7rem;color:var(--text-3)">Check server status</a>
+<a href="#" id="aSetup" class="hidden" onclick="showSetup();return false" style="font-size:.7rem;color:var(--text-3)">Admin setup guide</a>
+</div></div>
+<header>
+<div class="header-left"><div class="logo-mark"><img src="data:image/png;base64,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" alt="" onerror="this.parentNode.textContent='V'"></div><div class="logo-name">Viraj <em>International Academy</em></div></div>
+<div class="ticker" aria-label="School motto: Read, Lead, Succeed"><div class="ticker-track"><span>Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; </span><span>Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; Read, Lead, Succeed &nbsp;★&nbsp; </span></div></div>
+<div class="header-right"><select id="clsSwitch" class="tutor-only hidden" title="Switch class" onchange="changeClass(this.value)" style="width:auto;min-width:96px;padding:6px 10px;font-weight:700;border-radius:20px"></select><div id="notif-pill" class="api-status-pill hidden" onclick="nav('messages')" title="Messages from the administrator">🔔 <span id="notif-text">New message</span></div><button class="avatar-btn" onclick="openProfile()" title="Edit my profile"><span class="av-sm" id="whoAv">🙂</span><span id="whoami">Form Tutor</span></button><button class="btn btn-ghost btn-sm" onclick="changePw()">🔑 Password</button><button class="btn btn-ghost btn-sm" onclick="logout()">Sign out</button></div>
+</header>
+
+<div class="app-shell">
+<aside>
+<div class="nav-section tutor-only">Overview</div>
+<button class="nav-item active tutor-only" onclick="nav('dashboard')" data-panel="dashboard"><span class="ni">📊</span><span class="n-label">Dashboard</span></button>
+<button class="nav-item tutor-only" onclick="nav('messages')" data-panel="messages"><span class="ni">📢</span><span class="n-label">Messages <b id="msgBadge" class="hidden" style="background:var(--danger,#d33);color:#fff;border-radius:10px;padding:1px 7px;font-size:.7rem;margin-left:4px"></b></span></button>
+<div class="nav-section tutor-only">Management</div>
+<button class="nav-item tutor-only" onclick="nav('students')" data-panel="students"><span class="ni">👥</span><span class="n-label">Student Tracker</span></button>
+<button class="nav-item tutor-only" onclick="nav('register')" data-panel="register"><span class="ni">✅</span><span class="n-label">Register</span></button>
+<button class="nav-item tutor-only" onclick="nav('behavior')" data-panel="behavior"><span class="ni">⭐</span><span class="n-label">Behavior</span></button>
+<button class="nav-item tutor-only" onclick="nav('contacts')" data-panel="contacts"><span class="ni">📇</span><span class="n-label">Contacts &amp; Notes</span></button>
+<button class="nav-item tutor-only" onclick="nav('clubs')" data-panel="clubs"><span class="ni">🎨</span><span class="n-label">Learners Clubs</span></button>
+<button class="nav-item tutor-only" onclick="nav('reports')" data-panel="reports"><span class="ni">📥</span><span class="n-label">Reports</span></button>
+	<div id="admin-nav" class="hidden">
+	<div class="nav-section">Administration</div>
+	<button class="nav-item" onclick="nav('admin-dash')" data-panel="admin-dash"><span class="ni">⚙️</span><span class="n-label">Admin Center</span></button>
+	<button class="nav-item" onclick="nav('admin-users')" data-panel="admin-users"><span class="ni">👤</span><span class="n-label">Manage Tutors</span></button>
+	<button class="nav-item" onclick="nav('admin-classes')" data-panel="admin-classes"><span class="ni">📚</span><span class="n-label">Manage Classes</span></button>
+	<button class="nav-item" onclick="nav('admin-students')" data-panel="admin-students"><span class="ni">🎓</span><span class="n-label">Manage Students</span></button>
+	</div>
+	</aside>
+
+
+<main>
+
+<div id="panel-dashboard" class="panel active">
+<div class="panel-header"><div class="panel-title">Dashboard</div><div class="panel-sub">Your class at a glance — and who needs attention.</div></div>
+<div id="dashMsgs"></div>
+<div class="summary-grid" id="dashSummary"></div>
+<div class="m-motto">Read, Lead, Succeed</div>
+<div class="cal-wrap">
+<div class="cal-box"><div class="cal-head"><button class="btn btn-ghost btn-xs" onclick="calMove(-1)" aria-label="Previous month">‹</button><b id="calTitle"></b><button class="btn btn-ghost btn-xs" onclick="calMove(1)" aria-label="Next month">›</button></div><div class="cal-grid" id="calGrid"></div></div>
+<div class="cal-side"><div class="field"><label>Class calendar</label><select id="calClass" onchange="renderCal()"></select></div><div class="cal-day" id="calDayLabel"></div>
+<div class="form-row" style="margin:0 0 10px"><div class="field" style="flex:3"><label>New event on this day</label><input type="text" id="evTitle" maxlength="80" placeholder="e.g. Parents' meeting" onkeydown="if(event.key==='Enter')addEvent()"></div><button class="btn btn-primary btn-sm" onclick="addEvent()">+ Add</button></div>
+<div id="evList"></div></div></div>
+<div class="btn-row" style="margin-bottom:24px;">
+<button class="btn btn-primary btn-sm" onclick="nav('register')">✅ Take Register</button>
+<button class="btn btn-ghost btn-sm" onclick="nav('behavior')">⭐ Log Behavior</button>
+<button class="btn btn-ghost btn-sm" onclick="nav('students')">👥 My Class List</button>
+</div>
+<div style="font-size:0.72rem;color:var(--text-2);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Needs Attention</div>
+<div id="dashAttention"></div>
+<div style="font-size:0.72rem;color:var(--text-2);font-weight:700;margin:24px 0 8px;text-transform:uppercase;letter-spacing:.5px;">🎂 Upcoming Birthdays (14 days)</div>
+<div class="form-row" style="margin-bottom:12px"><div class="field"><label>Student</label><select id="bdStudent"></select></div><div class="field"><label>Birthday (type it)</label><input type="text" id="bdDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" oninput="dobMask(this)" onkeydown="if(event.key==='Enter')addBday()"></div><button class="btn btn-primary btn-sm" onclick="addBday()">+ Add birthday</button></div>
+<div id="dashBdays"></div>
+</div>
+
+<div id="panel-register" class="panel">
+<div class="panel-header"><div class="panel-title">Class Register</div><div class="panel-sub">Mark attendance for any date. Saves automatically.</div></div>
+<div class="form-row">
+<div class="field"><label>Date</label><input type="date" id="regDate" onchange="renderRegister()"></div>
+<button class="btn btn-ghost btn-sm" onclick="markAll('P')">✔ Mark all Present</button>
+<button class="btn btn-ghost btn-sm" onclick="clearDay()">Clear day</button>
+<button class="btn btn-ghost btn-sm" onclick="exportRegister()">⬇️ Export CSV</button>
+</div>
+<div class="summary-grid" id="regSummary"></div>
+<div id="regList"></div>
+</div>
+
+<div id="panel-behavior" class="panel">
+<div class="panel-header"><div class="panel-title">Behavior Tracker</div><div class="panel-sub">Log merits and concerns, and see each student's running points.</div></div>
+<div class="form-row">
+<div class="field"><label>Student</label><select id="behStudent"></select></div>
+<div class="field"><label>Type</label><select id="behType" onchange="setCats()"><option value="merit">⭐ Merit</option><option value="concern">⚠️ Concern</option></select></div>
+<div class="field"><label>Category</label><select id="behCat" onchange="toggleOther()"></select></div>
+<div class="field hidden" id="fOther"><label>Type the category</label><input type="text" id="behOther" maxlength="60" placeholder="e.g. Littering"></div>
+<div class="field" style="max-width:90px;min-width:70px;"><label>Points</label><input type="number" id="behPts" value="1" min="1" max="10"></div>
+</div>
+<div class="form-row">
+<div class="field" style="flex:3;"><label>Note (optional)</label><input type="text" id="behNote" placeholder="What happened?" onkeydown="if(event.key==='Enter')addBehavior()"></div>
+<button class="btn btn-primary btn-sm" onclick="addBehavior()">+ Log</button>
+</div>
+<div class="tbl-wrap" style="margin-bottom:24px;"><table class="tbl"><thead><tr><th>Student</th><th>Merits</th><th>Concerns</th><th>Net points</th></tr></thead><tbody id="behSummary"></tbody></table></div>
+<div class="form-row"><div class="field"><label>Filter log</label><select id="behFilter" onchange="renderBehavior()"></select></div><button class="btn btn-ghost btn-sm" onclick="exportBehavior()">⬇️ Export CSV</button></div>
+<div id="behLog"></div>
+</div>
+
+<div id="panel-contacts" class="panel">
+<div class="panel-header"><div class="panel-title">Contacts &amp; Notes</div><div class="panel-sub">Guardian details, birthdays and private notes. Press Save at the end of each row.</div></div>
+<div class="form-row"><button class="btn btn-ghost btn-sm" onclick="exportContacts()">⬇️ Export CSV</button></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Student</th><th>Class</th><th>Date of birth</th><th>Guardian</th><th>Phone</th><th>Email</th><th>Notes</th><th></th></tr></thead><tbody id="contactsBody"></tbody></table></div>
+</div>
+
+<div id="panel-clubs" class="panel">
+<div class="panel-header"><div class="panel-title">Learners Clubs</div><div class="panel-sub">Record club memberships and payment amounts for the academic year.</div></div>
+<div class="form-row">
+<button class="btn btn-ghost btn-sm" onclick="printClubs()">🖨️ Print Club List</button>
+<button class="btn btn-ghost btn-sm" onclick="exportClubs()">⬇️ Export CSV</button>
+</div>
+<div class="tbl-wrap">
+<table class="tbl">
+<thead><tr><th>Student</th><th>Club Name</th><th>Amount Paid</th><th>Action</th></tr></thead>
+<tbody id="clubsBody"></tbody>
+</table>
+</div>
+</div>
+
+
+<div id="panel-students" class="panel">
+<div class="panel-header">
+<div class="panel-title">Student Tracker</div>
+<div class="panel-sub" id="trackerSub">Your class list, supplied by the school administrator.</div>
+</div>
+<div class="summary-grid" id="trackerSummary"></div>
+<div class="card card-accent" style="margin-bottom:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<div style="flex:1;min-width:220px"><b id="trackerClass">No class selected</b><div class="text-sm text-muted">This list is managed by the administrator and updates automatically. You only see learners of the class you selected — use the class box at the top to switch.</div></div>
+<button class="btn btn-ghost btn-sm" onclick="syncSchool(true).then(()=>toast('✅ Up to date','ok',1500))">🔄 Refresh now</button>
+<button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ Export CSV</button>
+</div>
+
+<div class="students-grid" id="classList"></div>
+<div id="emptyState" class="hidden" style="text-align:center;padding:40px;color:var(--text-2);">
+<div style="font-size:2.5rem;margin-bottom:12px;">👥</div>
+<div style="font-weight:700;">No learners in this class yet</div>
+<div class="text-sm mt-2">When the administrator adds learners to this class they will appear here automatically.</div>
+</div>
+</div>
+
+
+<div id="panel-messages" class="panel">
+<div class="panel-header"><div class="panel-title">Messages</div><div class="panel-sub">Announcements from the school administrator — for everyone, or just for your class.</div></div>
+<div id="msgList"></div>
+</div>
+
+<!-- Admin Panels -->
+<div id="panel-admin-dash" class="panel">
+<div class="panel-header"><div class="panel-title">Admin Control Center</div><div class="panel-sub">Post messages to form tutors and manage the school.</div></div>
+<div class="summary-grid" id="adminSummary"></div>
+<div class="card card-accent" style="margin-bottom:24px">
+<div style="font-weight:800;margin-bottom:12px">📢 Post a message to form tutors</div>
+<div class="form-row"><div class="field"><label>Send to</label><select id="msgTarget"></select></div><div class="field" style="flex:2"><label>Title</label><input type="text" id="msgTitle" maxlength="80" placeholder="e.g. Staff meeting on Friday"></div></div>
+<div class="field" style="margin-bottom:12px"><label>Message</label><textarea id="msgText" rows="3" maxlength="2000" placeholder="Type your message… tutors see it instantly on their page."></textarea></div>
+<button class="btn btn-primary btn-sm" onclick="postAdminMsg()">📤 Post message</button>
+</div>
+<div style="font-size:0.72rem;color:var(--text-2);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Posted messages</div>
+<div id="adminMsgList" style="margin-bottom:24px"></div>
+<div class="btn-row">
+<button class="btn btn-primary btn-sm" onclick="nav('admin-students')">🎓 Manage Students</button>
+<button class="btn btn-primary btn-sm" onclick="nav('admin-classes')">📚 Manage Classes</button>
+<button class="btn btn-primary btn-sm" onclick="nav('admin-users')">👥 Manage Tutors</button>
+<button class="btn btn-orange btn-sm" onclick="generateCode()">🔑 Generate Registration Code</button>
+</div>
+</div>
+
+<div id="panel-admin-users" class="panel">
+<div class="panel-header"><div class="panel-title">Tutor Management</div><div class="panel-sub">Everyone who has registered, the class they picked, and password resets.</div></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Email</th><th>Name</th><th>Class</th><th>Actions</th></tr></thead><tbody id="adminUserList"></tbody></table></div>
+</div>
+
+<div id="panel-admin-classes" class="panel">
+<div class="panel-header"><div class="panel-title">Class Management</div><div class="panel-sub">Create the classes tutors can choose from.</div></div>
+<div class="form-row"><div class="field"><label>New Class Name</label><input type="text" id="newClassName" maxlength="40" placeholder="e.g. 9A" onkeydown="if(event.key==='Enter')addClass()"></div><button class="btn btn-primary btn-sm" onclick="addClass()">+ Add Class</button></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Class</th><th>Learners</th><th>Action</th></tr></thead><tbody id="adminClassList"></tbody></table></div>
+</div>
+
+<div id="panel-admin-students" class="panel">
+<div class="panel-header"><div class="panel-title">Student Database</div><div class="panel-sub">Add learners by typing or from Excel. Form tutors see them instantly, by class.</div></div>
+<datalist id="classDL"></datalist>
+<div class="card" style="margin-bottom:20px">
+<div style="font-weight:800;margin-bottom:10px">✍️ Add a learner by typing</div>
+<div class="form-row">
+<div class="field" style="flex:2"><label>Full name</label><input type="text" id="stuName" maxlength="80" placeholder="e.g. Amani Otieno" onkeydown="if(event.key==='Enter')addStudentAdmin()"></div>
+<div class="field"><label>Admission no.</label><input type="text" id="stuAdm" maxlength="30" placeholder="e.g. 1001" onkeydown="if(event.key==='Enter')addStudentAdmin()"></div>
+<div class="field"><label>Birthday</label><input type="text" id="stuDob" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" oninput="dobMask(this)" onkeydown="if(event.key==='Enter')addStudentAdmin()"></div>
+<div class="field"><label>Class</label><input type="text" id="stuClass" list="classDL" maxlength="40" placeholder="Pick or type" onkeydown="if(event.key==='Enter')addStudentAdmin()"></div>
+<button class="btn btn-primary btn-sm" onclick="addStudentAdmin()">+ Add learner</button>
+</div></div>
+<div class="card" style="margin-bottom:24px">
+<div style="font-weight:800;margin-bottom:10px">📁 Import from Excel / CSV</div>
+<div class="form-row"><div class="field"><label>Class for rows that have no “Class” column</label><input type="text" id="impClass" list="classDL" maxlength="40" placeholder="Pick or type (optional)"></div><button class="btn btn-ghost btn-sm" onclick="downloadTemplate()">⬇️ Download template</button></div>
+<div class="upload-zone" onclick="$('adminImport').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleAdminImport({files:event.dataTransfer.files})">
+<div class="upload-icon">📁</div><div class="upload-label">Click or drag your Excel file here</div>
+<div class="upload-sub">Columns: <b>Name</b>, Admission Number, Date of Birth, <b>Class</b> (optional: Guardian, Phone, Email). A sheet named after an existing class is also used as the class.</div>
+<input type="file" id="adminImport" accept=".xlsx,.xls,.csv" hidden onchange="handleAdminImport(this)">
+</div></div>
+<div class="form-row"><div class="field"><label>Show</label><select id="stuFilter" onchange="renderAdminStudents(true)"></select></div><div class="text-sm text-muted" id="stuCount" style="align-self:center"></div></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Name</th><th>Admission #</th><th>Birthday</th><th>Class</th><th>Action</th></tr></thead><tbody id="adminStudentList"></tbody></table></div>
+</div>
+	<div id="panel-reports" class="panel">
+<div class="panel-header"><div class="panel-title">Reports</div><div class="panel-sub">Download or share reports for your form class.</div></div>
+<div class="form-row"><div class="field"><label>Report</label><select id="repType" onchange="renderReports()"><option value="student">Individual student report</option><option value="students">Student list &amp; contacts</option><option value="attendance">Attendance &amp; arrival</option><option value="behavior">Behavior summary</option><option value="events">Events &amp; calendar</option><option value="birthdays">Birthdays</option></select></div>
+<div class="field"><label>Class</label><select id="repClass" onchange="renderReports()"></select></div><div class="field hidden" id="repStudentF"><label>Student</label><select id="repStudent" onchange="renderReports()"></select></div></div>
+<div class="btn-row" style="margin-bottom:20px"><button class="btn btn-primary btn-sm" onclick="repFile('pdf')">📄 PDF</button><button class="btn btn-primary btn-sm" onclick="repFile('docx')">📝 Word</button><button class="btn btn-primary btn-sm" onclick="repFile('xlsx')">📊 Excel</button><button class="btn btn-ghost btn-sm" onclick="shareRep()">✉️ Share by email</button></div>
+<div class="tbl-wrap"><table class="tbl" id="repPreview"></table></div>
+</div>
+</main>
+</div>
+
+<div id="pModal" class="hidden"><div class="x-card" style="max-width:460px">
+<h3>My profile</h3><p class="text-sm text-muted">Printed on every report you download or share. You can edit it any time.</p>
+<div class="p-av"><div id="pPrev" class="av-big"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn btn-ghost btn-sm" style="cursor:pointer">📷 Upload photo<input type="file" id="pFile" accept="image/*" hidden onchange="pickPhoto(this)"></label><button class="btn btn-ghost btn-sm" onclick="pTmp.photo='';pPreview()">Remove photo</button></div></div>
+<div class="text-sm text-muted">…or choose an avatar</div><div class="av-grid" id="avGrid"></div>
+<div class="field"><label>Full name</label><input type="text" id="pName" maxlength="80" placeholder="e.g. Mr. J. Mwangi"></div>
+<div class="field"><label>Subject I teach</label><input type="text" id="pSubject" maxlength="60" placeholder="e.g. ICT"></div>
+<div class="field tutor-only" id="pClsRow"><label>Class I am form tutor of</label><select id="pCls"></select></div>
+<div class="btn-row"><button class="btn btn-primary btn-sm" onclick="saveProfile()">Save profile</button><button class="btn btn-ghost btn-sm" onclick="closeP()">Cancel</button></div></div></div>
+<script type="text/plain" id="beCode">/*  VIRAJ INTERNATIONAL ACADEMY — FORM TUTOR PORTAL BACKEND (Google Apps Script)
+    1. Change ACCESS_CODE below to your own private code, then Save.
+    2. Deploy > New deployment > Web app > Execute as: Me > Who has access: Anyone > Deploy.   */
+
+// ============ EDIT THE ACCESS CODE (SITE_URL is filled in for you) ============
+const ACCESS_CODE = 'CHANGE-ME';                     // type your code between the quotes: letters and numbers only
+const SITE_URL    = 'https://YOUR-SITE.netlify.app'; // your Netlify address (no slash at the end)
+// ===============================================================================
+
+const SCHOOL = 'Viraj International Academy';
+const PR = PropertiesService.getScriptProperties(), CA = CacheService.getScriptCache();
+const WEAK = 'Password must be 8+ characters with letters and numbers.';
+
+const out = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+const fail = m => out({ error: m });
+const hex = b => b.map(x => ('0' + (x & 255).toString(16)).slice(-2)).join('');
+const sha = t => hex(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t), Utilities.Charset.UTF_8));
+const eq = (a, b) => { a = String(a); b = String(b); if (a.length !== b.length) return false; let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; };
+const okEmail = e => e.length < 120 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) && /^(gmail\.com|yahoo\.com|.*viraj.*)$/.test(e.split('@')[1]);
+const strong = p => p.length >= 8 && p.length <= 128 && /[A-Za-z]/.test(p) && /\d/.test(p);
+const withLock = fn => { const l = LockService.getScriptLock(); l.waitLock(20000); try { return fn(); } finally { l.releaseLock(); } };
+
+function hashPw(pw, salt) { let h = salt + pw; for (let i = 0; i < 1000; i++) h = sha(h + salt + pw); return h; }
+function secret() { let s = PR.getProperty('SECRET'); if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); PR.setProperty('SECRET', s); } return s; }
+function sign(e, v) { const p = Utilities.base64EncodeWebSafe(JSON.stringify({ e: e, v: v, exp: Date.now() + 7 * 864e5 })); return p + '.' + Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(p, secret())); }
+function verify(t) { try { const a = String(t).split('.'); if (!eq(a[1], Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(a[0], secret())))) return null;
+  const o = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(a[0])).getDataAsString()); return o.exp > Date.now() ? o : null; } catch (x) { return null; } }
+const getU = e => { const v = PR.getProperty('u:' + sha(e)); return v ? JSON.parse(v) : null; };
+function setPw(e, pw) { const old = getU(e) || {}, salt = Utilities.getUuid(), v = (old.v || 0) + 1;
+  PR.setProperty('u:' + sha(e), JSON.stringify({ email: e, salt: salt, hash: hashPw(pw, salt), v: v, created: old.created || new Date().toISOString() })); return v; }
+const folder = () => { const it = DriveApp.getFoldersByName('Viraj Portal Data'); return it.hasNext() ? it.next() : DriveApp.createFolder('Viraj Portal Data'); };
+function dataFile(e, create) { const n = 'viraj-data-' + sha(e) + '.json', it = folder().getFilesByName(n); return it.hasNext() ? it.next() : (create ? folder().createFile(n, '{}', 'application/json') : null); }
+
+function doGet() { return out({ service: 'Viraj Form Tutor Portal', functionRunning: true, recoveryEmailReady: SITE_URL.indexOf('YOUR-SITE') < 0, accessCodeSet: ACCESS_CODE !== 'CHANGE-ME' }); }
+
+function doPost(e) {
+  try { let b; try { b = JSON.parse(e.postData.contents); } catch (x) { return fail('Bad request'); } return b && typeof b === 'object' ? handle(b) : fail('Bad request'); }
+  catch (err) { return fail('Server error: ' + err.message); }
+}
+
+function handle(b) {
+  const email = String(b.email || '').trim().toLowerCase(), pw = String(b.password || '');
+  const ok = (e, v) => out({ token: sign(e, v), email: e });
+  const lk = 'f:' + sha(email), isLocked = () => !!CA.get(lk + ':l');
+  const strike = () => { const n = (+CA.get(lk) || 0) + 1; if (n >= 5) { CA.put(lk + ':l', '1', 900); CA.remove(lk); } else CA.put(lk, String(n), 900); };
+  const LOCKED = 'Too many attempts. Try again in 15 minutes.';
+  switch (b.a) {
+    case 'register': {
+      if (!okEmail(email)) return fail('Use your Viraj school email, Gmail or Yahoo address.');
+      if (isLocked()) return fail(LOCKED);
+      if (ACCESS_CODE === 'CHANGE-ME') return fail('Registration is not open yet: the administrator must set ACCESS_CODE in the Google script.');
+      if (String(b.code || '') !== ACCESS_CODE) { strike(); return fail('Invalid school access code.'); }
+      if (!strong(pw)) return fail(WEAK);
+      return withLock(() => getU(email) ? fail('This email is already registered — please sign in.') : ok(email, setPw(email, pw)));
+    }
+    case 'login': {
+      if (isLocked()) return fail(LOCKED);
+      const u = getU(email);
+      if (!u || !eq(hashPw(pw, u.salt), u.hash)) { strike(); return fail('Incorrect email or password.'); }
+      CA.remove(lk); return ok(email, u.v || 1);
+    }
+    case 'forgot': {
+      if (SITE_URL.indexOf('YOUR-SITE') >= 0) return fail('Password recovery is not set up yet. Please contact the ICT department.');
+      if (okEmail(email) && !CA.get('p:' + sha(email)) && getU(email)) {
+        CA.put('p:' + sha(email), '1', 60);
+        const t = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+        CA.put('r:' + sha(t), email, 3600);
+        MailApp.sendEmail({ to: email, name: SCHOOL, subject: 'Reset your Form Tutor Portal password',
+          htmlBody: '<div style="font-family:Arial,sans-serif"><h2 style="color:#0056ab">' + SCHOOL + '</h2><p>Click the button to choose a new password. The link works for 1 hour.</p><p><a href="' + SITE_URL + '/?reset=' + t + '" style="background:#0056ab;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Reset password</a></p><p style="color:#777;font-size:12px">If you did not ask for this, ignore this email.</p></div>' });
+      }
+      return out({ ok: true });
+    }
+    case 'reset': {
+      const k = 'r:' + sha(b.rt), em = CA.get(k);
+      if (!em) return fail('This recovery link has expired. Please request a new one.');
+      if (!strong(pw)) return fail(WEAK);
+      return withLock(() => { const v = setPw(em, pw); CA.remove(k); CA.remove('f:' + sha(em) + ':l'); return ok(em, v); });
+    }
+  }
+  const t = verify(b.token), u = t && getU(t.e);
+  if (!u || (u.v || 1) !== t.v) return fail('Session expired — please sign in again.');
+  const me = t.e;
+  switch (b.a) {
+    case 'me': return ok(me, u.v || 1);
+    case 'load': { const f = dataFile(me, false); return out({ data: f ? (JSON.parse(f.getBlob().getDataAsString() || '{}').students ? JSON.parse(f.getBlob().getDataAsString()) : null) : null }); }
+    case 'save': {
+      const d = b.data;
+      if (!d || typeof d !== 'object' || !Array.isArray(d.students) || !Array.isArray(d.behavior) || typeof d.attendance !== 'object' || (d.events && !Array.isArray(d.events))) return fail('Invalid data');
+      if (d.students.length > 600) return fail('Too many students.');
+      const q = d.profile || {}, ph = String(q.photo || '');
+      const profile = { name: String(q.name || '').slice(0, 80), subject: String(q.subject || '').slice(0, 60), cls: String(q.cls || '').slice(0, 40), emoji: String(q.emoji || '').slice(0, 8),
+        photo: /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(ph) && ph.length < 80000 ? ph : '' };
+      const s = JSON.stringify({ students: d.students, attendance: d.attendance, behavior: d.behavior, events: d.events || [], profile: profile });
+      if (s.length > 2e6) return fail('Data too large.');
+      dataFile(me, true).setContent(s); return out({ ok: true });
+    }
+    case 'changepw': { if (!strong(pw)) return fail(WEAK); return withLock(() => ok(me, setPw(me, pw))); }
+  }
+  return fail('Unknown action');
+}
+</script>
+<div id="sModal" class="hidden" onclick="if(event.target===this)closeSetup()"><div class="s-card"><h3 style="color:var(--accent)">Admin setup guide</h3><p class="text-sm text-muted" style="margin:6px 0 12px">One-time setup. Accounts, data and emails run in your own Google account.</p><ol><li>Open <b>script.google.com</b> → <b>New project</b> and delete the sample code.</li><li><button class="btn btn-primary btn-sm" onclick="copyBackend()">📋 Copy backend code</button> then paste it into the project. At the top, replace <code>CHANGE-ME</code> with your private school access code (letters and numbers only — keep the quote marks), then click Save.</li><li>Click <b>Deploy → New deployment → Web app</b>. Set <i>Execute as: Me</i> and <i>Who has access: Anyone</i>. Deploy, then <b>Authorize access</b> (Advanced → Go to … → Allow). Copy the <b>Web app URL</b>.</li><li>Open <code>config.js</code> (in the same folder as <code>index.html</code>) in Notepad, paste the URL between the quotes and save.</li><li>Drag the whole folder (<code>index.html</code> and <code>config.js</code>) onto your site's Deploys page on Netlify again. Done — tutors can register with the access code.</li></ol><p class="text-sm text-muted" style="margin-top:12px">The copied code already contains this site's address (<b id="sOrigin"></b>) for password-recovery emails.</p><div class="btn-row" style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="closeSetup()">Close</button></div></div></div>
+<button id="fab" onclick="openX()" title="Download or share" aria-label="Download or share">📤</button>
+<div id="xModal" class="hidden" onclick="if(event.target===this)closeX()"><div class="x-card">
+<h3>Download or share</h3>
+<div class="field"><label>What</label><select id="xType" onchange="xChange()"><option value="student">Individual student report</option><option value="students">Student list &amp; contacts</option><option value="attendance">Attendance &amp; arrival</option><option value="behavior">Behavior summary</option><option value="birthdays">Birthdays</option><option value="events">Events &amp; calendar</option></select></div>
+<div class="field"><label>Class</label><select id="xClass"></select></div><div class="field hidden" id="xStudentF"><label>Student</label><select id="xStudent"></select></div>
+<div class="btn-row"><button class="btn btn-primary btn-sm" onclick="repFile('pdf','x')">📄 PDF</button><button class="btn btn-primary btn-sm" onclick="repFile('docx','x')">📝 Word</button><button class="btn btn-primary btn-sm" onclick="repFile('xlsx','x')">📊 Excel</button><button class="btn btn-ghost btn-sm" onclick="shareRep('x')">✉️ Email</button></div>
+<button class="btn btn-ghost btn-sm" onclick="closeX()">Close</button></div></div>
+
+	<div id="classModal" class="modal-overlay hidden">
+	<div class="modal">
+	<h2>Select Your Class</h2>
+	<p id="classModalText">Choose the class you are form tutor of. You will see only the learners in that class, and you can switch class any time from the top bar.</p>
+	<div class="field">
+	<select id="classSelect"></select>
+	</div>
+	<div class="btn-row" style="margin-top:20px">
+	<button class="btn btn-primary" id="classGo" onclick="confirmClass()">Continue</button><button class="btn btn-ghost hidden" id="classRetry" onclick="openClassModal()">🔄 Check again</button>
+	</div>
+	</div>
+	</div>
+
+</div>
+<div id="clubModal" class="modal-overlay hidden" onclick="if(event.target===this)closeClubModal()">
+<div class="modal">
+<h2 id="clubModalTitle">Edit Club</h2>
+<div class="field"><label>Club Name</label><input type="text" id="clubName" placeholder="e.g. Chess Club"></div>
+<div class="field"><label>Amount Paid</label><input type="number" id="clubAmount" placeholder="0.00"></div>
+<div class="btn-row" style="margin-top:20px">
+<button class="btn btn-primary" onclick="saveClub()">Save Details</button>
+<button class="btn btn-ghost" onclick="closeClubModal()">Cancel</button>
+</div>
+</div>
+</div>
+<div class="status-toast hidden" id="statusToast"></div>
+<div id="print-area" style="display:none;"></div>
+
+<script>
+// Privacy: nothing is kept on this computer — data lives in the tutor's own cloud record.
+try{Object.keys(localStorage).filter(k=>k.startsWith('ict_')).forEach(k=>localStorage.removeItem(k));}catch(e){}
+// ── Toast ──
+let toastTimer;
+function toast(msg, type = 'info', duration = 3000) {
+const el = document.getElementById('statusToast');
+el.textContent = msg; el.className = `status-toast ${type}`;
+clearTimeout(toastTimer);
+toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
+}
+
+
+// ── Utils ──
+function esc(str) {
+return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escA(str) { return String(str).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// ── Branding used on PDF headers (kept from saved data) ──
+let schoolSettings = {color:'#0a3d7a',schoolName:'Viraj International Academy',motto:'Read, Lead, Succeed'};
+
+// ── Student tracker ──
+let students = [];
+let clubs = [];
+let curStudentId = null;
+let recTopics = [];
+
+function saveStudents() {
+cloudSave();
+}
+
+function renderSummary(){
+const cl=new Set(students.map(x=>x.cls).filter(Boolean)).size,bd=students.filter(x=>x.dob).length;
+const c=(v,l,col)=>`<div class="summ-card"><div class="summ-val" style="color:${col}">${v}</div><div class="summ-lbl">${l}</div></div>`;
+$('trackerSummary').innerHTML=c(students.length,'Students','var(--accent)')+c(cl,'Classes','var(--accent-g)')+c(bd,'Birthdays saved','var(--accent-p)');
+}
+function renderStudents(){
+const list=$('classList'),empty=$('emptyState');renderSummary();
+if(!students.length){list.innerHTML='';empty.classList.remove('hidden');return;}
+empty.classList.add('hidden');
+list.innerHTML=students.map(x=>{const r=attStats(x.id).rate,n=behavior.filter(b=>same(b.sid,x.id)).reduce((a,b)=>a+b.pts,0),ini=x.name.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().substring(0,2);
+return `<div class="student-card"><div class="sc-header"><div class="sc-avatar">${esc(ini)}</div><div><div class="sc-name">${esc(x.name)}</div><div class="sc-meta">${x.cls?esc(x.cls):'No class'}${x.dob?' · 🎂 '+fmtDob(x.dob):''}</div></div></div><div class="sc-stats"><span class="stat-tag">Attendance: ${r===null?'—':r+'%'}</span><span class="stat-tag ${n>=0?'good':'poor'}">Behavior: ${n>0?'+':''}${n}</span></div><div class="sc-actions"><button class="btn btn-ghost btn-xs" onclick="openX('student','${x.id}')">📄 Report</button></div></div>`;}).join('');
+}
+function exportCSV(){
+if(!students.length){alert('No students to export.');return;}
+csvDl([['Name','Class','Date of birth'],...students.map(x=>[x.name,x.cls||'',fmtDob(x.dob)])],'students');
+}
+
+// ── Shared ──
+const $=id=>document.getElementById(id);
+const iso=d=>{d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const same=(a,b)=>String(a)===String(b);
+const csvDl=(rows,name)=>{const csv=rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name+'_'+iso()+'.csv';a.click();};
+const sName=id=>(students.find(s=>same(s.id,id))||{name:'(removed)'}).name;
+let attendance={};
+let behavior=[];
+const saveAtt=()=>{cloudSave();};
+const saveBeh=()=>{cloudSave();};
+
+function nav(id){
+document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));
+$('panel-'+id).classList.add('active');
+const _f=({dashboard:renderDash,students:renderStudents,register:renderRegister,behavior:renderBehavior,contacts:renderContacts,clubs:renderClubs,reports:renderReports,messages:renderMessages})[id];if(_f)_f();
+}
+
+// ── Register ──
+function attStats(id){let p=0,a=0,l=0;Object.values(attendance).forEach(d=>{const v=d[id];if(v==='P')p++;else if(v==='A')a++;else if(v==='L')l++;});const t=p+a+l;return{rate:t?Math.round((p+l)/t*100):null};}
+function renderRegister(){
+if(!$('regDate').value)$('regDate').value=iso();
+const day=attendance[$('regDate').value]||{};
+$('regList').innerHTML=students.length?students.map(s=>{const v=day[s.id],r=attStats(s.id).rate;
+return `<div class="reg-row"><div class="reg-name">${esc(s.name)}</div><div class="reg-btns">${[['P','Present'],['L','Late'],['A','Absent'],['E','Excused']].map(([k,t])=>`<button class="att-btn ${k}${v===k?' on':''}" onclick="mark('${s.id}','${k}')">${t}</button>`).join('')}</div><input type="time" class="arr" title="Arrival time" value="${day['t'+s.id]||''}" onchange="setArr('${s.id}',this.value)"><div class="reg-rate" title="Overall attendance">${r===null?'—':r+'%'}</div></div>`;}).join(''):'<div class="text-muted">Add students in Student Tracker first.</div>';
+const c={P:0,L:0,A:0,E:0};students.forEach(s=>{if(day[s.id])c[day[s.id]]++;});
+const card=(v,l,col)=>`<div class="summ-card"><div class="summ-val" style="color:${col}">${v}</div><div class="summ-lbl">${l}</div></div>`;
+$('regSummary').innerHTML=card(c.P,'Present','var(--accent-g)')+card(c.L,'Late','var(--warn)')+card(c.A,'Absent','var(--danger)')+card(students.length-c.P-c.L-c.A-c.E,'Not marked','var(--text-2)');
+}
+function mark(id,k){const d=$('regDate').value;attendance[d]=attendance[d]||{};if(attendance[d][id]===k){delete attendance[d][id];delete attendance[d]['t'+id];}else{attendance[d][id]=k;if((k==='P'||k==='L')&&d===iso()&&!attendance[d]['t'+id])attendance[d]['t'+id]=new Date().toTimeString().slice(0,5);}saveAtt();renderRegister();}
+function markAll(k){const d=$('regDate').value;attendance[d]=attendance[d]||{};students.forEach(s=>attendance[d][s.id]=k);saveAtt();renderRegister();}
+function clearDay(){if(!confirm('Clear the register for this date?'))return;delete attendance[$('regDate').value];saveAtt();renderRegister();}
+function exportRegister(){const dates=Object.keys(attendance).sort();if(!students.length||!dates.length){alert('No register data yet.');return;}
+csvDl([['Name',...dates,'Attendance %'],...students.map(s=>[s.name,...dates.map(d=>attendance[d][s.id]||''),attStats(s.id).rate??''])],'register');}
+
+// ── Behavior ──
+const CATS={merit:['Excellent work','Helpful','Leadership','Improvement','Participation','Kindness','Teamwork','Punctuality','Responsibility','Good manners','Sportsmanship','Honesty','Other'],concern:['Disruption','Missing homework','Phone use','Disrespect','Late to class','Late to school','Fighting','Bullying','Skipping class','Leaving class without permission','Cheating','Uniform violation','Damaging property','Foul language','Sleeping in class','Not participating','Other']};
+const catVal=()=>$('behCat').value==='Other'?'Other: '+$('behOther').value.trim().slice(0,60):$('behCat').value;
+function toggleOther(){$('fOther').classList.toggle('hidden',$('behCat').value!=='Other');}
+function setCats(){$('behCat').innerHTML=CATS[$('behType').value].map(c=>`<option>${c}</option>`).join('');toggleOther();}
+function renderBehavior(){
+const opts=students.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+const st=$('behStudent').value,f=$('behFilter').value;
+$('behStudent').innerHTML=opts||'<option value="">No students yet</option>';setSel($('behStudent'),st);
+$('behFilter').innerHTML='<option value="">All students</option>'+opts;$('behFilter').value=f;
+if(!$('behCat').options.length)setCats();
+$('behSummary').innerHTML=students.map(s=>{const e=behavior.filter(b=>same(b.sid,s.id));const m=e.filter(b=>b.pts>0).length,c=e.length-m,n=e.reduce((a,b)=>a+b.pts,0);return{s,m,c,n};}).sort((a,b)=>b.n-a.n)
+.map(r=>`<tr><td>${esc(r.s.name)}</td><td class="pos">${r.m}</td><td class="neg">${r.c}</td><td class="${r.n>=0?'pos':'neg'}"><b>${r.n>0?'+':''}${r.n}</b></td></tr>`).join('')||'<tr><td colspan="4" class="text-muted">No students yet</td></tr>';
+const log=behavior.filter(b=>inCls(b.sid)&&(!f||same(b.sid,f))).sort((a,b)=>b.id-a.id).slice(0,100);
+$('behLog').innerHTML=log.map(b=>`<div class="beh-item"><div class="beh-pts ${b.pts>0?'pos':'neg'}">${b.pts>0?'+':''}${b.pts}</div><div style="flex:1"><div><b>${esc(sName(b.sid))}</b> · ${esc(b.cat)}</div><div class="text-sm text-muted">${b.date}${b.note?' — '+esc(b.note):''}</div></div><button class="btn btn-danger btn-xs" onclick="delBehavior(${b.id})">🗑</button></div>`).join('')||'<div class="text-muted">No entries yet.</div>';
+}
+function addBehavior(){
+const sid=$('behStudent').value;if(!sid){alert('Add a student first.');return;}if($('behCat').value==='Other'&&!$('behOther').value.trim()){alert('Please type the category.');return;}
+const t=$('behType').value,p=Math.max(1,Math.min(10,parseInt($('behPts').value)||1));
+behavior.push({id:Date.now(),sid,date:iso(),type:t,cat:catVal(),pts:t==='merit'?p:-p,note:$('behNote').value.trim()});
+saveBeh();$('behNote').value='';$('behOther').value='';renderBehavior();toast('✅ Logged','ok',1500);
+}
+function delBehavior(id){behavior=behavior.filter(b=>b.id!==id);saveBeh();renderBehavior();}
+function exportBehavior(){if(!behavior.length){alert('No entries yet.');return;}csvDl([['Date','Student','Type','Category','Points','Note'],...behavior.filter(b=>inCls(b.sid)).map(b=>[b.date,sName(b.sid),b.type,b.cat,b.pts,b.note])],'behavior');}
+
+// ── Contacts ──
+function renderContacts(){
+const f=(s,k,ph,v,ex)=>`<td><input type="text" data-k="${k}" maxlength="120" value="${esc(v!==undefined?v:(s[k]||''))}" placeholder="${ph}" ${ex||''}></td>`;
+$('contactsBody').innerHTML=students.map(s=>`<tr id="crow-${s.id}"><td><b>${esc(s.name)}</b></td>${f(s,'cls','',undefined,'disabled')}${f(s,'dob','DD/MM/YYYY',fmtDob(s.dob),'oninput="dobMask(this)" inputmode="numeric" maxlength="10"')}${f(s,'guardian','Guardian name')}${f(s,'phone','07…')}${f(s,'email','email')}${f(s,'info','Private notes')}<td><button class="btn btn-primary btn-xs" onclick="saveRow('${s.id}')">Save</button> <button class="btn btn-ghost btn-xs" onclick="openX('student','${s.id}')">📄 Report</button></td></tr>`).join('')||'<tr><td colspan="8" class="text-muted">Add students in Student Tracker first.</td></tr>';}
+function saveRow(id){const st=students.find(x=>same(x.id,id));if(!st)return;const u={};let bad=false;
+$('crow-'+id).querySelectorAll('input').forEach(i=>{const k=i.dataset.k,v=i.value.trim();
+if(k==='dob'){const p=v?parseDob(v):'';if(v&&!p)bad=true;else u.dob=p;}
+else if(k==='email'&&v&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))bad=true;
+else u[k]=v;});
+if(bad)return toast('⚠️ Check the birthday (DD/MM/YYYY) and email format','err');Object.assign(st,u);saveStudents();toast('✅ Saved '+st.name,'ok',1800);}
+function setField(id,k,v){const s=students.find(x=>same(x.id,id));if(s){s[k]=v.trim();saveStudents();}}
+function exportContacts(){if(!students.length){alert('No students yet.');return;}csvDl([['Name','Class','Date of birth','Guardian','Phone','Email','Notes'],...students.map(s=>[s.name,s.cls,fmtDob(s.dob),s.guardian,s.phone,s.email,s.info])],'contacts');}
+
+// ── Clubs ──
+let curClubSid = null;
+function renderClubs(){
+$('clubsBody').innerHTML=students.map(s=>{const c=clubs.find(x=>same(x.sid,s.id));
+return `<tr id="crow-club-${s.id}"><td class="sc-name">${esc(s.name)}</td><td>${esc(c?c.name:'—')}</td><td>${c?c.amt:'—'}</td><td><button class="btn btn-primary btn-xs" onclick="openClubModal('${s.id}')">📝 Edit</button></td></tr>`;}).join('')||'<tr><td colspan="4" class="text-muted">Add students first.</td></tr>';}
+function openClubModal(sid){
+curClubSid=sid;const c=clubs.find(x=>same(x.sid,sid))||{name:'',amt:''};
+$('clubName').value=c.name;$('clubAmount').value=c.amt;$('clubModalTitle').textContent='Club: '+esc(sName(sid));
+$('clubModal').classList.remove('hidden');
+}
+function closeClubModal(){$('clubModal').classList.add('hidden');}
+function saveClub(){
+const name=$('clubName').value.trim(),amt=$('clubAmount').value.trim();
+if(!name)return alert('Enter club name.');
+const idx=clubs.findIndex(x=>same(x.sid,curClubSid));
+if(idx===-1)clubs.push({id:Date.now(),sid:curClubSid,name:name.slice(0,60),amt});
+else Object.assign(clubs[idx],{name:name.slice(0,60),amt});
+cloudSave();renderClubs();closeClubModal();toast('✅ Club saved','ok',1500);
+}
+function printClubs(){
+const l=students.map(s=>{const c=clubs.find(x=>same(x.sid,s.id));return[s.name,s.cls||'',c?c.name:'—',c?c.amt:'—'];});
+const html=`<div id="print-area" style="display:block">
+<div class="p-school">${SCH}</div><div class="p-motto">Read, Lead, Succeed</div><div class="p-div" style="background:var(--accent)"></div>
+<h1>Learners Clubs List</h1><div class="p-meta"><span>Date: ${new Date().toLocaleDateString('en-GB')}</span></div>
+<table><thead><tr><th>Student</th><th>Class</th><th>Club</th><th>Amount Paid</th></tr></thead>
+<tbody>${l.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td></tr>`).join('')}</tbody></table>
+${SIGN()}</div>`;
+$('print-area').innerHTML=html;window.print();
+}
+function exportClubs(){if(!clubs.length){alert('No club data to export.');return;}
+csvDl([['Student','Club','Amount'],...clubs.filter(c=>inCls(c.sid)).map(c=>[sName(c.sid),c.name,c.amt])],'clubs');}
+
+// ── Dashboard ──
+function renderDash(){
+const day=attendance[iso()]||{};let here=0,marked=0;students.forEach(s=>{if(day[s.id]){marked++;if(day[s.id]!=='A'&&day[s.id]!=='E')here++;}});
+const wk=new Date();wk.setDate(wk.getDate()-7);const w=iso(wk);
+const net=behavior.filter(b=>inCls(b.sid)&&b.date>=w).reduce((a,b)=>a+b.pts,0);
+const flags=students.map(s=>{const r=[],at=attStats(s.id).rate;
+if(at!==null&&at<80)r.push('Attendance '+at+'%');
+const c=behavior.filter(b=>same(b.sid,s.id)&&b.pts<0&&b.date>=iso(new Date(Date.now()-14*864e5))).length;
+if(c>=3)r.push(c+' concerns in 2 weeks');
+return{s,r};}).filter(x=>x.r.length);
+const card=(v,l,col)=>`<div class="summ-card"><div class="summ-val" style="color:${col}">${v}</div><div class="summ-lbl">${l}</div></div>`;
+$('dashSummary').innerHTML=card(students.length,'Students','var(--accent)')+card(marked?here+'/'+students.length:'—','Here today','var(--accent-g)')+card((net>0?'+':'')+net,'Behavior (7 days)',net>=0?'var(--accent-g)':'var(--danger)')+card(flags.length,'Need attention','var(--danger)');
+$('dashAttention').innerHTML=flags.map(x=>`<div class="warn-row"><b style="min-width:140px">${esc(x.s.name)}</b>${x.r.map(t=>`<span class="stat-tag poor">${t}</span>`).join('')}</div>`).join('')||'<div class="text-muted text-sm">Nobody flagged. 🎉 (Flags: attendance below 80%, or 3+ concerns in two weeks.)</div>';
+}
+
+const SCH='Viraj International Academy';
+const SS={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){}},del:k=>{try{sessionStorage.removeItem(k)}catch(e){}},clear:()=>{try{sessionStorage.clear()}catch(e){}}};
+let TOKEN=SS.get('viraj_token')||'',ME=null,AM='in',saveT,RESET='';
+let CSPV='';addEventListener('securitypolicyviolation',e=>{CSPV=e.blockedURI+' ['+e.violatedDirective+']';});
+const API=()=>String(window.VIRAJ_API||'').trim()||'/api';
+async function api(a,d={}){const u=API();
+if(u==='/api'&&location.protocol==='file:')throw new Error('Open the portal through its web address (Netlify / GitHub link), not by double-clicking index.html.');
+if(u==='/api'&&/\.github\.io$/i.test(location.hostname))throw new Error('This copy is hosted on GitHub Pages, which cannot run the login server. Paste your Google Web App address into config.js (see google-backend/SETUP.md).');if(u!=='/api'&&!/^https:\/\/script\.google\.com\//.test(u))throw new Error('config.js has an invalid address — leave it empty to use the built-in Netlify server.');
+let r;try{r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a,token:TOKEN,...d})});}catch(e){throw new Error(CSPV?('Blocked by the site security settings: '+CSPV):(u==='/api'?'Cannot reach the server — check your internet connection.':'Cannot reach your Google script — tap "Check server status" below to find out why.'));}
+const j=await r.json().catch(()=>null);if(!j)throw new Error(r.status===404||r.status===405?'The portal server (/api) is not deployed on this site (error '+r.status+'). Upload the whole folder including netlify/functions/api.mjs — see DEPLOY.md.':'The portal server answered with error '+r.status+' instead of data. Open your-site/api in the browser, or check Netlify → Logs → Functions → api.');if(j.error)throw new Error(j.error);return j;}
+
+const okEmail=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)&&/^(gmail\.com|yahoo\.com|.*viraj.*)$/.test(e.split('@')[1]);
+function authMode(m){AM=m;const up=m==='up',r=m==='reset',f=m==='forgot';
+$('fPass').classList.toggle('hidden',f);$('fPass2').classList.toggle('hidden',!(up||r));$('fCode').classList.toggle('hidden',!up);
+$('aEmail').parentNode.classList.toggle('hidden',r);$('authTabs').classList.toggle('hidden',r||f);
+$('aForgot').classList.toggle('hidden',m!=='in');$('aBack').classList.toggle('hidden',!f);
+$('aGo').textContent={in:'Sign in',up:'Create account',forgot:'Send recovery link',reset:'Set new password'}[m];
+[...$('authTabs').children].forEach((b,i)=>b.classList.toggle('on',(i===1)===up));amsg('');}
+function amsg(t){const m=$('aMsg');m.textContent=t;m.style.color=t[0]==='✅'?'var(--accent-g)':'var(--danger)';}
+async function authGo(){
+const e=$('aEmail').value.trim().toLowerCase(),p=$('aPass').value;
+try{
+if(AM==='reset'){if(weak(p)||p!==$('aPass2').value)return amsg('Use 8+ characters with letters and numbers; both entries must match.');const j=await api('reset',{rt:RESET,password:p});history.replaceState(null,'',location.pathname);return await enter(j);}
+if(!okEmail(e))return amsg('Use your Viraj school email, Gmail or Yahoo address.');
+if(AM==='forgot'){await api('forgot',{email:e,origin:location.origin});return amsg('✅ If that email is registered, a recovery link is on its way.');}
+if(AM==='up'){if(weak(p)||p!==$('aPass2').value)return amsg('Use 8+ characters with letters and numbers; both entries must match.');return await enter(await api('register',{email:e,password:p,code:$('aCode').value.trim()}));}
+await enter(await api('login',{email:e,password:p}));
+}catch(x){amsg('⚠️ '+x.message);}}
+async function enter(j){TOKEN=j.token;SS.set('viraj_token',TOKEN);ME={email:j.email,role:j.role||'tutor'};idle();$('whoami').textContent=j.email;
+try{await cloudLoad();}catch(x){ME=null;TOKEN='';SS.del('viraj_token');throw x;}
+$('auth').style.display='none';updateWho();
+const adm=ME.role==='admin';
+document.querySelectorAll('.tutor-only').forEach(e=>e.classList.toggle('hidden',adm));
+$('admin-nav').classList.toggle('hidden',!adm);
+if(adm){nav('admin-dash');if(!PROFILE.name)openProfile();return;}
+await syncSchool(true);startPolling();nav('dashboard');
+if(!PROFILE.cls)openClassModal();else if(!PROFILE.name)openProfile();
+const b=students.filter(s=>s.dob&&nextBday(s.dob).days===0).map(s=>s.name);if(b.length)toast('🎂 Birthday today: '+b.join(', '),'ok',6000);}
+function logout(){SS.clear();location.reload();}
+async function changePw(){const p=prompt('New password (min 8 characters):');if(!p)return;if(weak(p))return alert('Use 8+ characters with letters and numbers.');try{const j=await api('changepw',{password:p});TOKEN=j.token;SS.set('viraj_token',TOKEN);toast('✅ Password changed','ok');}catch(x){toast('⚠️ '+x.message,'err');}}
+async function cloudLoad(){const d=(await api('load')).data;if(d){students=d.students||[];attendance=d.attendance||{};behavior=d.behavior||[];events=d.events||[];clubs=d.clubs||[];msgSeen=+d.seen||0;PROFILE={...PROFILE,...(d.profile||{})};}else{students=[];attendance={};behavior=[];events=[];clubs=[];cloudSave();}}
+let dirty=false;
+const doSave=()=>{dirty=false;return api('save',{data:{students,attendance,behavior,events,clubs,seen:msgSeen,profile:PROFILE}}).catch(x=>{dirty=true;if(/Session expired/i.test(x.message)){alert('Your session has expired — please sign in again.');logout();}else toast('⚠️ Could not save — check your connection','err');});};
+function cloudSave(){if(!ME)return;dirty=true;clearTimeout(saveT);saveT=setTimeout(doSave,800);}
+addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&dirty&&ME){clearTimeout(saveT);doSave();}});
+addEventListener('pagehide',()=>{if(dirty&&ME){clearTimeout(saveT);doSave();}});
+
+// ── Birthdays ──
+function nextBday(dob){const t=new Date();t.setHours(0,0,0,0);const[y,m,d]=dob.split('-').map(Number);let n=new Date(t.getFullYear(),m-1,d);if(n<t)n=new Date(t.getFullYear()+1,m-1,d);return{days:Math.round((n-t)/864e5),age:n.getFullYear()-y,date:n};}
+function renderBdays(){const bs=$('bdStudent'),bv=bs.value;bs.innerHTML=students.map(x=>`<option value="${x.id}">${esc(x.name)}${x.cls?' ('+esc(x.cls)+')':''}</option>`).join('');setSel(bs,bv);const l=students.filter(s=>s.dob).map(s=>({s,...nextBday(s.dob)})).filter(x=>x.days<=14).sort((a,b)=>a.days-b.days);
+$('dashBdays').innerHTML=l.map(x=>`<div class="warn-row"><span>🎂</span><b style="min-width:140px">${esc(x.s.name)}</b><span class="text-sm text-muted">${esc(x.s.cls||'')}</span><span class="stat-tag good">${x.days===0?'Today! Turns '+x.age:'In '+x.days+' day'+(x.days>1?'s':'')+' · turns '+x.age}</span></div>`).join('')||'<div class="text-muted text-sm">No birthdays in the next 14 days.</div>';}
+const _rd=renderDash;renderDash=function(){_rd();renderBdays();renderCal();renderDashMsgs();};
+function setArr(id,v){const d=$('regDate').value;attendance[d]=attendance[d]||{};if(v)attendance[d]['t'+id]=v;else delete attendance[d]['t'+id];saveAtt();}
+
+// ── Reports ──
+function buildRep(P){P=P||'rep';const t=$(P+'Type').value,c=$(P+'Class').value,L=students.filter(s=>!c||s.cls===c);
+const fmt=d=>d?fmtDob(d):'',hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+let T;
+if(t==='students')T=['Student list & contacts',['Name','Class','Date of birth','Guardian','Phone','Email'],L.map(s=>[s.name,s.cls||'',fmt(s.dob),s.guardian||'',s.phone||'',s.email||''])];
+if(t==='attendance')T=['Attendance & arrival',['Name','Class','Present','Late','Absent','Excused','Attendance %','Avg arrival'],L.map(s=>{const k={P:0,L:0,A:0,E:0},ts=[];Object.values(attendance).forEach(o=>{if(o[s.id]){k[o[s.id]]++;if(o['t'+s.id])ts.push(o['t'+s.id]);}});const r=attStats(s.id).rate,m=ts.length?Math.round(ts.reduce((a,x)=>a+ +x.slice(0,2)*60+ +x.slice(3,5),0)/ts.length):null;return[s.name,s.cls||'',k.P,k.L,k.A,k.E,r===null?'':r+'%',m===null?'':hm(m)];})];
+if(t==='behavior')T=['Behavior summary',['Name','Class','Merits','Concerns','Net points'],L.map(s=>{const e=behavior.filter(b=>same(b.sid,s.id));return[s.name,s.cls||'',e.filter(b=>b.pts>0).length,e.filter(b=>b.pts<0).length,e.reduce((a,b)=>a+b.pts,0)];})];
+if(t==='birthdays')T=['Birthdays',['Name','Class','Date of birth','Next birthday','Turning'],L.filter(s=>s.dob).map(s=>({s,...nextBday(s.dob)})).sort((a,b)=>a.days-b.days).map(x=>[x.s.name,x.s.cls||'',fmt(x.s.dob),x.date.toLocaleDateString('en-GB',{day:'numeric',month:'short'}),x.age])];
+if(t==='student'){const s=students.find(x=>same(x.id,$(P+'Student').value));
+if(!s)T=['Individual student report',['Detail','Information'],[]];
+else{const st=attStats(s.id),k={P:0,L:0,A:0,E:0},ts=[];Object.values(attendance).forEach(o=>{if(o[s.id]){k[o[s.id]]++;if(o['t'+s.id])ts.push(o['t'+s.id]);}});
+const m=ts.length?Math.round(ts.reduce((a,x)=>a+ +x.slice(0,2)*60+ +x.slice(3,5),0)/ts.length):null,e=behavior.filter(b=>same(b.sid,s.id)).sort((a,b)=>b.id-a.id),age=s.dob?Math.floor((Date.now()-new Date(s.dob))/31557600000):'';
+T=['Student Report — '+s.name,['Detail','Information'],[['Full name',s.name],['Class',s.cls||''],['Date of birth',fmt(s.dob)],['Age',age],['Guardian',s.guardian||''],['Guardian phone',s.phone||''],['Guardian email',s.email||'']],
+[{h:'Attendance',head:['Measure','Value'],rows:[['Present',k.P],['Late',k.L],['Absent',k.A],['Excused',k.E],['Attendance %',st.rate===null?'':st.rate+'%'],['Average arrival',m===null?'':hm(m)]]},{h:'Behavior',head:['Date','Category','Points','Note'],rows:e.slice(0,15).map(b=>[b.date,b.cat,(b.pts>0?'+':'')+b.pts,b.note||''])}],true];}}
+if(t==='events')T=['Events & calendar',['Date','Event','Class','Status'],events.filter(e=>!c||!e.cls||e.cls===c).sort((a,b)=>a.date.localeCompare(b.date)).map(e=>[fmt(e.date),e.title,e.cls||'All classes',e.done?'Done':'Pending'])];
+return{title:T[0]+(c&&t!=='student'?' — '+c:''),head:T[1],rows:T[2],extra:T[3],guardian:T[4]};}
+function renderReports(){fillStudents('rep');const sel=$('repClass'),cur=sel.value,cl=[...new Set(students.map(s=>s.cls).filter(Boolean))].sort();
+sel.innerHTML='<option value="">All classes</option>'+cl.map(c=>`<option>${esc(c)}</option>`).join('');sel.value=cur;
+const r=buildRep();$('repPreview').innerHTML='<thead><tr>'+r.head.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+(r.rows.map(x=>'<tr>'+x.map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>').join('')||`<tr><td colspan="${r.head.length}" class="text-muted">Nothing to show yet.</td></tr>`)+'</tbody>';}
+// ── Form tutor profile (printed on every report) ──
+let PROFILE={name:'',subject:'',cls:'',emoji:'👩‍🏫',photo:''},pTmp={};
+const avHTML=(p)=>p.photo?`<img src="${p.photo}" alt="">`:`<span>${esc(p.emoji||'🙂')}</span>`;
+function updateWho(){$('whoAv').innerHTML=avHTML(PROFILE);$('whoami').textContent=PROFILE.name||(ME&&ME.email)||'My profile';}
+function pPreview(){$('pPrev').innerHTML=avHTML(pTmp);}
+function openProfile(){pTmp={...PROFILE};$('pName').value=PROFILE.name;$('pSubject').value=PROFILE.subject;$('pCls').innerHTML=(SCHOOL.classes.length?'':'<option value="">No classes yet</option>')+SCHOOL.classes.map(c=>`<option ${c===PROFILE.cls?'selected':''}>${esc(c)}</option>`).join('');
+$('avGrid').innerHTML=['👩‍🏫','👨‍🏫','🙂','🦉','📚','🌟','🎓','🏀'].map(e=>`<button type="button" class="av-pick" onclick="pickEmoji('${e}')">${e}</button>`).join('');pPreview();$('pModal').classList.remove('hidden');}
+function closeP(){$('pModal').classList.add('hidden');}
+function pickEmoji(e){pTmp.emoji=e;pTmp.photo='';pPreview();}
+function pickPhoto(inp){const f=inp.files[0];if(!f)return;if(!/^image\//.test(f.type))return alert('Please choose an image file.');
+const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),m=Math.min(im.width,im.height);x.fillStyle='#fff';x.fillRect(0,0,160,160);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,160,160);pTmp.photo=c.toDataURL('image/jpeg',.85);pPreview();};im.onerror=()=>alert('Could not read that image.');im.src=rd.result;};rd.readAsDataURL(f);inp.value='';}
+function saveProfile(){const n=$('pName').value.trim();if(!n)return alert('Please enter your name.');
+const oldCls=PROFILE.cls,newCls=(ME&&ME.role==='admin')?'':($('pCls').value||oldCls||'');
+PROFILE={...pTmp,name:n.slice(0,80),subject:$('pSubject').value.trim().slice(0,60),cls:newCls.slice(0,40)};
+cloudSave();updateWho();closeP();toast('✅ Profile saved','ok',1800);if(newCls!==oldCls){students=[];SYNC_SIG='';syncSchool(true);}}
+const tutorLines=()=>['Form Tutor: '+(PROFILE.name||'—'),'Subject: '+(PROFILE.subject||'—')+'     Class: '+(PROFILE.cls||'—')];
+const SIGN=()=>`<div style="margin-top:36px;display:flex;gap:40px;font-family:Inter,sans-serif;font-size:.8rem;color:#333;"><div style="flex:2">Form Tutor: <b>${esc(PROFILE.name||'')}</b><div style="margin-top:34px;border-top:1px solid #333;padding-top:4px">Signature</div></div><div style="flex:1"><div style="margin-top:50px;border-top:1px solid #333;padding-top:4px">Date</div></div></div>`;
+
+// ── Report files (PDF / Word / Excel) with tutor details + signature ──
+const TS={headStyles:{fillColor:[0,86,171],textColor:[255,255,255]},alternateRowStyles:{fillColor:[243,247,252]}};
+function pdfDoc(r){const d=new jspdf.jsPDF({orientation:r.head.length>6?'landscape':'portrait'}),W=d.internal.pageSize.getWidth(),H=d.internal.pageSize.getHeight();
+d.setFontSize(16);d.setTextColor(0,86,171);d.text(SCH,14,16);d.setFontSize(9);d.setTextColor(236,92,40);d.text('Read, Lead, Succeed',14,21);
+d.setFontSize(12);d.setTextColor(40);d.text(r.title,14,29);d.setFontSize(9);d.setTextColor(90);d.text(new Date().toLocaleDateString('en-GB'),W-14,29,{align:'right'});
+const tl=tutorLines();tl.forEach((t,i)=>d.text(t,14,35+i*5));
+d.autoTable({startY:36+tl.length*5,head:[r.head],body:r.rows,...TS});
+(r.extra||[]).forEach(x=>{let y=d.lastAutoTable.finalY+9;if(y>H-40){d.addPage();y=20;}d.setFontSize(11);d.setTextColor(0,86,171);d.text(x.h,14,y);d.autoTable({startY:y+3,head:[x.head],body:x.rows,...TS});});
+let y=d.lastAutoTable.finalY+26;if(y>H-(r.guardian?60:36)){d.addPage();y=34;}
+d.setDrawColor(60);d.setFontSize(10);d.setTextColor(40);
+d.text('Form Tutor: '+(PROFILE.name||''),14,y-8);d.line(14,y,84,y);d.text('Signature',14,y+5);d.line(100,y,140,y);d.text('Date',100,y+5);
+if(r.guardian){y+=26;d.text('Parent / Guardian',14,y-8);d.line(14,y,84,y);d.text('Signature',14,y+5);d.line(100,y,140,y);d.text('Date',100,y+5);}
+return d;}
+async function repFile(f,P){const r=buildRep(P),n=r.title.replace(/[^\w]+/g,'_')+'_'+iso(),today=new Date().toLocaleDateString('en-GB');
+if(f==='pdf')pdfDoc(r).save(n+'.pdf');
+if(f==='xlsx'){const a=[[SCH],['Read, Lead, Succeed'],[r.title,today],...tutorLines().map(x=>[x]),[],r.head,...r.rows];(r.extra||[]).forEach(x=>a.push([],[x.h],x.head,...x.rows));
+a.push([],[],['Form Tutor: '+(PROFILE.name||'')],['Signature: ____________________','Date: ____________']);if(r.guardian)a.push([],['Parent / Guardian signature: ____________________','Date: ____________']);
+const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a),'Report');XLSX.writeFile(wb,n+'.xlsx');}
+if(f==='docx'){const D=docx,p=(t,o={})=>new D.Paragraph({spacing:{after:o.a??80},children:[new D.TextRun({text:t,bold:o.b,size:o.s,color:o.c})]}),
+c=(t,h)=>new D.TableCell({shading:h?{fill:'0056AB',type:D.ShadingType.CLEAR,color:'auto'}:undefined,children:[new D.Paragraph({children:[new D.TextRun({text:String(t??''),bold:h,color:h?'FFFFFF':undefined})]})]}),
+tb=(hd,rw)=>new D.Table({width:{size:9000,type:D.WidthType.DXA},rows:[new D.TableRow({children:hd.map(h=>c(h,true))}),...rw.map(x=>new D.TableRow({children:x.map(v=>c(v))}))]});
+const k=[p(SCH,{b:true,s:32,c:'0056AB'}),p('Read, Lead, Succeed',{s:20,c:'EC5C28'}),p(r.title+' · '+today,{b:true,s:24,a:120}),...tutorLines().map(t=>p(t,{s:20})),p(''),tb(r.head,r.rows)];
+(r.extra||[]).forEach(x=>k.push(p(''),p(x.h,{b:true,s:24,c:'0056AB'}),tb(x.head,x.rows)));
+k.push(p(''),p(''),p('Form Tutor: '+(PROFILE.name||'………………………')),p('Signature: ________________________     Date: ________________'));
+if(r.guardian)k.push(p(''),p('Parent / Guardian signature: ________________________     Date: ________________'));
+const a=document.createElement('a');a.href=URL.createObjectURL(await D.Packer.toBlob(new D.Document({sections:[{children:k}]})));a.download=n+'.docx';a.click();}}
+function fillStudents(P,sid){const s=$(P+'Student'),v=sid||s.value;s.innerHTML=students.map(x=>`<option value="${x.id}">${esc(x.name)}${x.cls?' ('+esc(x.cls)+')':''}</option>`).join('');setSel(s,v);$(P+'StudentF').classList.toggle('hidden',$(P+'Type').value!=='student');}
+function setSel(s,v){if(v&&[...s.options].some(o=>o.value===String(v)))s.value=v;else if(s.options.length)s.selectedIndex=0;}
+function xChange(){fillStudents('x');}
+
+async function shareRep(P){const r=buildRep(P),d=pdfDoc(r),f=new File([d.output('blob')],r.title.replace(/[^\w]+/g,'_')+'.pdf',{type:'application/pdf'});
+if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:r.title,text:SCH+' — '+r.title});return;}catch(e){if(e.name==='AbortError')return;}}
+d.save(f.name);const to=prompt('Recipient email — the PDF was downloaded; attach it to the email that opens next:');
+if(to)location.href='mailto:'+to+'?subject='+encodeURIComponent(SCH+' — '+r.title)+'&body='+encodeURIComponent('Please find the attached report.\n\n'+SCH);}
+
+// ── Calendar / events ──
+let events=[],calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=iso();
+const saveEv=()=>cloudSave();
+function calMove(d){calM+=d;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}renderCal();}
+function calPick(k){calSel=k;renderCal();}
+function renderCal(){
+const sel=$('calClass'),cur=sel.value,cl=[...new Set(students.map(s=>s.cls).filter(Boolean))].sort();
+sel.innerHTML='<option value="">All classes</option>'+cl.map(c=>`<option>${esc(c)}</option>`).join('');sel.value=cur;const c=sel.value;
+const ev=events.filter(e=>!c||!e.cls||e.cls===c);
+$('calTitle').textContent=new Date(calY,calM,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+const first=(new Date(calY,calM,1).getDay()+6)%7,days=new Date(calY,calM+1,0).getDate(),t=iso();
+let h=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="cal-dow">${d}</div>`).join('')+'<div></div>'.repeat(first);
+for(let d=1;d<=days;d++){const k=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),es=ev.filter(e=>e.date===k),bd=students.some(s=>s.dob&&s.dob.slice(5)===k.slice(5)&&(!c||s.cls===c));
+h+=`<button class="cal-day-btn${k===t?' today':''}${k===calSel?' sel':''}" onclick="calPick('${k}')">${d}<span class="dots">${bd?'🎂':''}${es.length?'<i class="'+(es.every(e=>e.done)?'dn':'')+'"></i>':''}</span></button>`;}
+$('calGrid').innerHTML=h;
+$('calDayLabel').textContent=new Date(calSel+'T00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+$('evList').innerHTML=ev.filter(e=>e.date===calSel).map(e=>`<div class="ev-item${e.done?' done':''}"><input type="checkbox" ${e.done?'checked':''} onchange="toggleEv(${e.id})" title="Mark as done" aria-label="Mark as done"><span style="flex:1">${esc(e.title)}${e.cls?` <small>· ${esc(e.cls)}</small>`:''}</span><button class="btn btn-danger btn-xs" onclick="delEv(${e.id})" aria-label="Delete event">🗑</button></div>`).join('')||'<div class="text-muted text-sm">No events on this day.</div>';}
+function addEvent(){const t=$('evTitle').value.trim();if(!t)return;events.push({id:Date.now(),date:calSel,title:t.slice(0,80),cls:$('calClass').value,done:false});saveEv();$('evTitle').value='';renderCal();toast('📅 Event added','ok',1500);}
+function toggleEv(id){const e=events.find(x=>x.id===id);if(e){e.done=!e.done;saveEv();renderCal();}}
+function delEv(id){events=events.filter(x=>x.id!==id);saveEv();renderCal();}
+
+// ── Typed birthdays ──
+function parseDob(t){const m=String(t).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);if(!m)return'';const d=+m[1],mo=+m[2],y=+m[3],dt=new Date(y,mo-1,d);if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d||y<1990||dt>new Date())return'';return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+const fmtDob=i=>i?i.slice(8)+'/'+i.slice(5,7)+'/'+i.slice(0,4):'';
+function dobMask(el){el.value=el.value.replace(/[^\d]/g,'').slice(0,8).replace(/^(\d{2})(\d)/,'$1/$2').replace(/^(\d{2})\/(\d{2})(\d)/,'$1/$2/$3');}
+function addBday(){const s=students.find(x=>same(x.id,$('bdStudent').value));if(!s)return alert('Add a student first.');const p=parseDob($('bdDate').value);if(!p)return alert('Type the birthday as DD/MM/YYYY, e.g. 14/03/2012');s.dob=p;saveStudents();$('bdDate').value='';renderBdays();renderCal();toast('🎂 Birthday saved for '+s.name,'ok',2000);}
+
+// ── Download / share from anywhere ──
+function openX(tp,sid){const m={students:'students',contacts:'students',register:'attendance',behavior:'behavior',dashboard:'events',reports:'students'},p=document.querySelector('.panel.active');
+$('xType').value=tp||m[p?p.id.slice(6):'']||'students';
+$('xClass').innerHTML='<option value="">All classes</option>'+[...new Set(students.map(s=>s.cls).filter(Boolean))].sort().map(c=>`<option>${esc(c)}</option>`).join('');fillStudents('x',sid);$('xModal').classList.remove('hidden');}
+function closeX(){$('xModal').classList.add('hidden');}
+addEventListener('keydown',e=>{if(e.key==='Escape')closeX();});
+
+// ── Security: strong passwords + auto sign-out when idle ──
+const weak=p=>p.length<8||!/[A-Za-z]/.test(p)||!/\d/.test(p);
+let idleT;function idle(){clearTimeout(idleT);if(ME)idleT=setTimeout(()=>{alert('You were signed out after 30 minutes of inactivity.');logout();},30*6e4);}
+['click','keydown','touchstart'].forEach(e=>addEventListener(e,idle,{passive:true}));
+
+// ── Admin setup guide ──
+function showSetup(){$('sOrigin').textContent=location.origin;$('sModal').classList.remove('hidden');}
+function closeSetup(){$('sModal').classList.add('hidden');}
+async function diagnose(){
+const u=API(),say=t=>amsg(t);
+if(u==='/api'){say('⚠️ config.js is empty, so the site is not pointed at your Google script. Paste your Web app address (ending /exec) into config.js and upload the site again.');return;}
+if(!/^https:\/\/script\.google\.com\/(a\/macros\/[^\/]+\/|macros\/)s\/[^\/]+\/exec$/.test(u)){say('⚠️ The address in config.js is not a valid Google Web app address. It must start with https://script.google.com/macros/s/ and end with /exec (not /edit or /dev).');return;}
+say('⏳ Testing the connection…');
+let reach=false;try{await fetch(u,{mode:'no-cors'});reach=true;}catch(e){}
+if(!reach){say('⚠️ This browser or network cannot reach Google at all. Try mobile data or another browser, switch off ad-blockers/VPN, and check the school firewall.'+(CSPV?' Blocked by site security: '+CSPV:''));return;}
+try{const r=await fetch(u),j=await r.json();say(j&&j.functionRunning?'✅ The Google script is running correctly. If sign-in still fails, press Ctrl+F5 to refresh and try again.':'⚠️ The address answers, but not with the portal script. Paste the portal Code.gs again and deploy a New version.');}
+catch(e){say('⚠️ Google is reachable but the script is not public. In Google: Deploy > Manage deployments > pencil > Who has access = Anyone, Version = New version > Deploy. Then open the Web app address in a private window: it must show functionRunning.');}}
+async function copyBackend(){let t=$('beCode').textContent;if(/^https?:/.test(location.origin))t=t.replace('https://YOUR-SITE.netlify.app',location.origin);
+try{await navigator.clipboard.writeText(t);}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}
+toast('✅ Backend code copied — paste it into Google Apps Script','ok',4000);}
+if(/[?&]setup\b/.test(location.search)){$('aDiag').classList.remove('hidden');$('aSetup').classList.remove('hidden');showSetup();}
+
+// ═══════════ School sync: admin ⇄ form tutor ═══════════
+let SCHOOL={classes:[],messages:[]},SYNC_SIG='',syncBusy=false,syncAgain=false,pollT=null,msgSeen=0;
+const inCls=id=>students.some(s=>same(s.id,id));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const nl2br=t=>esc(t).replace(/\n/g,'<br>');
+const fmtWhen=t=>new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const unreadMsgs=()=>SCHOOL.messages.filter(m=>m.at>msgSeen);
+
+// Pull the class list, this tutor's class roster and messages from the server.
+async function syncSchool(force){
+	if(!ME||ME.role==='admin')return;
+	if(syncBusy){syncAgain=true;return;}
+	syncBusy=true;
+	try{
+		const before=unreadMsgs().length;
+		const j=await api('sync',{cls:PROFILE.cls||''});
+		SCHOOL={classes:j.classes||[],messages:j.messages||[]};
+		let lost=false;
+		if(PROFILE.cls&&!j.cls){lost=true;PROFILE.cls='';students=[];cloudSave();updateWho();}   // admin removed that class
+		const sig=JSON.stringify([j.classes,j.students,j.messages,j.cls]);
+		const changed=sig!==SYNC_SIG||force;SYNC_SIG=sig;
+		fillClassSwitch();
+		if(changed){
+			if(j.cls&&mergeRoster(j.students))cloudSave();
+			updateMsgBadges();
+			if(unreadMsgs().length>before&&!force)toast('📢 New message from the administrator','ok',5000);
+			refreshActive();
+		}
+		if(lost){toast('⚠️ Your class was removed by the administrator — please choose a class.','err',6000);openClassModal();}
+	}catch(x){
+		if(/Session expired/i.test(x.message)){alert('Your session has expired — please sign in again.');logout();}
+	}finally{
+		syncBusy=false;
+		if(syncAgain){syncAgain=false;syncSchool();}
+	}
+}
+// Server roster is the truth for name/class/admission/birthday. The tutor's own records (guardian notes, attendance, behaviour) stay attached by id.
+function mergeRoster(list){
+	const old=new Map(students.map(s=>[String(s.id),s]));
+	const legacy=students.filter(s=>!list.some(r=>same(r.id,s.id)));   // learners the tutor typed in before the admin system existed
+	const remap={};let touched=false;
+	students=list.map(r=>{
+		let o=old.get(String(r.id));
+		if(!o){const L=legacy.find(s=>!remap[s.id]&&String(s.name).trim().toLowerCase()===String(r.name).trim().toLowerCase());
+			if(L){o=L;remap[L.id]=r.id;touched=true;}}
+		o=o||{};
+		return {...o,id:r.id,name:r.name,adm:r.adm||'',cls:r.cls,dob:r.dob||o.dob||'',guardian:o.guardian||r.guardian||'',phone:o.phone||r.phone||'',email:o.email||r.email||'',records:o.records||[]};
+	});
+	if(touched){   // keep old attendance / behaviour / club records attached to the same learner
+		Object.values(attendance).forEach(d=>{for(const [a,b] of Object.entries(remap)){if(a in d){d[b]=d[a];delete d[a];}if('t'+a in d){d['t'+b]=d['t'+a];delete d['t'+a];}}});
+		behavior.forEach(x=>{if(remap[x.sid])x.sid=remap[x.sid];});
+		clubs.forEach(x=>{if(remap[x.sid])x.sid=remap[x.sid];});
+	}
+	return touched;
+}
+function refreshActive(){
+	const p=document.querySelector('.panel.active');if(!p)return;
+	const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&p.contains(a))return;   // don't wipe what someone is typing
+	nav(p.id.replace('panel-',''));
+}
+function startPolling(){
+	clearInterval(pollT);pollT=setInterval(()=>{if(document.visibilityState==='visible')syncSchool();},15000);
+	document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncSchool();});
+}
+function fillClassSwitch(){
+	const s=$('clsSwitch');if(!s)return;
+	s.innerHTML=(PROFILE.cls?'':'<option value="">Select class…</option>')+SCHOOL.classes.map(c=>`<option ${c===PROFILE.cls?'selected':''}>${esc(c)}</option>`).join('');
+	s.value=PROFILE.cls||'';
+	s.classList.toggle('hidden',!SCHOOL.classes.length||(ME&&ME.role==='admin'));
+	const tc=$('trackerClass');if(tc)tc.textContent=PROFILE.cls?('Class '+PROFILE.cls+' · '+students.length+' learner'+(students.length===1?'':'s')):'No class selected';
+}
+async function changeClass(c){
+	if(!c||c===PROFILE.cls)return;
+	PROFILE.cls=c;students=[];SYNC_SIG='';cloudSave();
+	await syncSchool(true);
+	toast(`✅ Class ${c}: ${students.length} learner${students.length===1?'':'s'}`,'ok');
+}
+// ── Class picker (shown right after registration / first sign-in) ──
+async function openClassModal(){
+	$('classModal').classList.remove('hidden');
+	await syncSchool(true);
+	const cls=SCHOOL.classes;
+	$('classSelect').innerHTML=cls.map(c=>`<option>${esc(c)}</option>`).join('');
+	$('classSelect').classList.toggle('hidden',!cls.length);
+	$('classGo').classList.toggle('hidden',!cls.length);
+	$('classRetry').classList.toggle('hidden',!!cls.length);
+	$('classModalText').textContent=cls.length?'Choose the class you are form tutor of. You will see only the learners in that class, and you can switch class any time from the top bar.':'The administrator has not created any classes yet. This page will update by itself — or tap “Check again”.';
+}
+function closeClassModal(){$('classModal').classList.add('hidden');}
+async function confirmClass(){
+	const c=$('classSelect').value;if(!c)return;
+	closeClassModal();
+	await changeClass(c);
+	if(!PROFILE.name)openProfile();
+}
+// keep the picker fresh while it's open and classes appear
+setInterval(()=>{if(!$('classModal').classList.contains('hidden')&&!SCHOOL.classes.length)openClassModal();},8000);
+
+// ── Messages (tutor side) ──
+const msgCard=(m,adm)=>`<div class="card" style="margin-bottom:12px;${!adm&&m.at>msgSeen?'border-left:4px solid var(--accent)':''}"><div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${esc(m.title||'Announcement')}</b> <span class="stat-tag ${m.target==='all'?'':'good'}">${m.target==='all'?'All tutors':'Class '+esc(m.target)}</span><div class="text-sm text-muted" style="margin:2px 0 8px">${fmtWhen(m.at)}</div><div style="font-size:.9rem;line-height:1.55">${nl2br(m.text)}</div></div>${adm?`<button class="btn btn-danger btn-xs" onclick="delAdminMsg('${m.id}')">🗑</button>`:''}</div></div>`;
+function updateMsgBadges(){
+	const n=unreadMsgs().length,pill=$('notif-pill'),b=$('msgBadge');
+	pill.classList.toggle('hidden',!n);$('notif-text').textContent=n+' new message'+(n===1?'':'s');
+	b.classList.toggle('hidden',!n);b.textContent=n;
+}
+function renderMessages(){
+	$('msgList').innerHTML=SCHOOL.messages.map(m=>msgCard(m,false)).join('')||'<div class="text-muted">No messages yet.</div>';
+	const latest=SCHOOL.messages.reduce((a,m)=>Math.max(a,m.at),0);
+	if(latest>msgSeen){setTimeout(()=>{msgSeen=latest;cloudSave();updateMsgBadges();},1500);}   // mark as read after they've had a look
+}
+function renderDashMsgs(){
+	const u=unreadMsgs().slice(0,2),box=$('dashMsgs');if(!box)return;
+	box.innerHTML=u.length?`<div style="margin-bottom:18px">${u.map(m=>msgCard(m,false)).join('')}<button class="btn btn-ghost btn-xs" onclick="nav('messages')">Open all messages</button></div>`:'';
+}
+
+// ═══════════ Administrator ═══════════
+let adminData={classes:[],students:[],messages:[]};
+async function adminRefresh(){const l=await api('admin_load');adminData={classes:[],students:[],messages:[],...l.data};return adminData;}
+const adminErr=x=>toast('⚠️ '+x.message,'err',5000);
+const classCount=c=>adminData.students.filter(s=>s.cls===c).length;
+function fillClassDL(){$('classDL').innerHTML=adminData.classes.map(c=>`<option value="${esc(c)}">`).join('');}
+
+async function renderAdminDash(){
+	try{await adminRefresh();}catch(x){return adminErr(x);}
+	const un=adminData.students.filter(s=>!s.cls).length;
+	const c=(v,l)=>`<div class="summ-card"><div class="summ-val">${v}</div><div class="summ-lbl">${l}</div></div>`;
+	$('adminSummary').innerHTML=c(adminData.classes.length,'Classes')+c(adminData.students.length,'Learners')+c(un,'Without a class')+c(adminData.messages.length,'Messages posted');
+	$('msgTarget').innerHTML='<option value="all">All form tutors</option>'+adminData.classes.map(x=>`<option value="${esc(x)}">Only class ${esc(x)}</option>`).join('');
+	$('adminMsgList').innerHTML=adminData.messages.map(m=>msgCard(m,true)).join('')||'<div class="text-muted">Nothing posted yet.</div>';
+}
+async function postAdminMsg(){
+	const text=$('msgText').value.trim();if(!text)return toast('⚠️ Write a message first','err');
+	try{const j=await api('admin_post_message',{title:$('msgTitle').value.trim(),text,target:$('msgTarget').value});
+		adminData=j.data;$('msgText').value='';$('msgTitle').value='';renderAdminDash();toast('✅ Message posted — tutors will see it within seconds','ok',4000);}catch(x){adminErr(x);}
+}
+async function delAdminMsg(id){if(!confirm('Delete this message for everyone?'))return;try{adminData=(await api('admin_del_message',{id})).data;renderAdminDash();}catch(x){adminErr(x);}}
+
+async function renderAdminUsers(){
+	$('adminUserList').innerHTML='<tr><td colspan="4" class="text-muted">Loading…</td></tr>';
+	try{const j=await api('admin_list_users');
+		$('adminUserList').innerHTML=j.users.map((u,i)=>`<tr><td>${esc(u.email)}${u.role==='admin'?' <span class="stat-tag good">admin</span>':''}</td><td>${esc(u.name||'—')}</td><td>${esc(u.cls||'—')}</td><td><button class="btn btn-ghost btn-xs" onclick="resetTutorPassword(${i})">🔑 Reset password</button></td></tr>`).join('')||'<tr><td colspan="4" class="text-muted">No accounts yet.</td></tr>';
+		window._users=j.users;
+	}catch(x){$('adminUserList').innerHTML='';adminErr(x);}
+}
+async function resetTutorPassword(i){
+	const u=(window._users||[])[i];if(!u)return;
+	const pw=prompt('New password for '+u.email+' (8+ characters, letters and numbers):');
+	if(!pw)return;if(weak(pw))return alert('Password must be 8+ characters with letters and numbers.');
+	try{await api('admin_reset_pw',{email:u.email,password:pw});toast('✅ Password reset for '+u.email,'ok');}catch(x){adminErr(x);}
+}
+async function generateCode(){
+	try{const j=await api('admin_generate_code');alert('New one-time registration code:\n\n'+j.code+'\n\nGive it to the new tutor. It works once.');}catch(x){adminErr(x);}
+}
+
+async function renderAdminClasses(){
+	try{await adminRefresh();}catch(x){return adminErr(x);}
+	$('adminClassList').innerHTML=adminData.classes.map((c,i)=>`<tr><td class="mono">${esc(c)}</td><td>${classCount(c)}</td><td><button class="btn btn-danger btn-xs" onclick="delClass(${i})">🗑</button></td></tr>`).join('')||'<tr><td colspan="3" class="text-muted">No classes yet. Add one above (e.g. 9A).</td></tr>';
+}
+async function addClass(){
+	const c=$('newClassName').value.trim();if(!c)return;
+	try{adminData=(await api('admin_add_class',{name:c})).data;$('newClassName').value='';renderAdminClasses();toast('✅ Class added','ok');}catch(x){adminErr(x);}
+}
+async function delClass(i){
+	const c=adminData.classes[i];if(c===undefined)return;
+	const n=classCount(c);
+	if(!confirm(`Delete class ${c}?`+(n?`\n\n${n} learner(s) will stay in the database but have no class, and tutors of ${c} will be asked to pick another class.`:'')))return;
+	try{adminData=(await api('admin_del_class',{name:c})).data;renderAdminClasses();}catch(x){adminErr(x);}
+}
+
+function renderAdminStudents(keepFilter){
+	const run=()=>{
+		fillClassDL();
+		const f=$('stuFilter'),cur=keepFilter===true?f.value:(f.value||'__all');
+		f.innerHTML='<option value="__all">All learners ('+adminData.students.length+')</option>'+adminData.classes.map(c=>`<option value="c:${esc(c)}">Class ${esc(c)} (${classCount(c)})</option>`).join('')+'<option value="__none">No class ('+adminData.students.filter(s=>!s.cls).length+')</option>';
+		f.value=[...f.options].some(o=>o.value===cur)?cur:'__all';
+		const v=f.value;
+		const L=adminData.students.filter(s=>v==='__all'||(v==='__none'?!s.cls:('c:'+s.cls)===v));
+		$('stuCount').textContent=L.length+' shown';
+		$('adminStudentList').innerHTML=L.map(s=>`<tr><td class="sc-name">${esc(s.name)}</td><td>${esc(s.adm||'—')}</td><td>${s.dob?fmtDob(s.dob):'—'}</td><td><select onchange="moveStudent('${s.id}',this.value)" style="min-width:90px"><option value="">— none —</option>${adminData.classes.map(c=>`<option ${c===s.cls?'selected':''}>${esc(c)}</option>`).join('')}</select></td><td><button class="btn btn-ghost btn-xs" onclick="editStudent('${s.id}')">✏️</button> <button class="btn btn-danger btn-xs" onclick="delAdminStudent('${s.id}')">🗑</button></td></tr>`).join('')||'<tr><td colspan="5" class="text-muted">No learners here yet — add some above.</td></tr>';
+	};
+	if(keepFilter===true)return run();
+	adminRefresh().then(run).catch(adminErr);
+}
+async function addStudentAdmin(){
+	const name=$('stuName').value.trim();if(!name)return toast('⚠️ Enter the learner\'s name','err');
+	const dv=$('stuDob').value.trim(),dob=dv?parseDob(dv):'';
+	if(dv&&!dob)return toast('⚠️ Type the birthday as DD/MM/YYYY, e.g. 14/03/2012','err',4000);
+	try{const j=await api('admin_add_students',{students:[{name,adm:$('stuAdm').value.trim(),dob,cls:$('stuClass').value.trim()}]});
+		adminData=j.data;['stuName','stuAdm','stuDob'].forEach(i=>$(i).value='');$('stuName').focus();
+		renderAdminStudents(true);toast(j.updated?'✅ Existing learner updated':'✅ Learner added — visible to the class tutor now','ok');}catch(x){adminErr(x);}
+}
+async function moveStudent(id,cls){try{adminData=(await api('admin_update_student',{id,fields:{cls}})).data;renderAdminStudents(true);toast('✅ Moved','ok',1500);}catch(x){adminErr(x);renderAdminStudents(true);}}
+async function editStudent(id){
+	const s=adminData.students.find(x=>x.id===id);if(!s)return;
+	const name=prompt('Full name:',s.name);if(name===null)return;
+	const adm=prompt('Admission number:',s.adm||'');if(adm===null)return;
+	const dv=prompt('Birthday (DD/MM/YYYY, blank for none):',s.dob?fmtDob(s.dob):'');if(dv===null)return;
+	const dob=dv.trim()?parseDob(dv):'';if(dv.trim()&&!dob)return toast('⚠️ Birthday must be DD/MM/YYYY','err',4000);
+	try{adminData=(await api('admin_update_student',{id,fields:{name,adm,dob}})).data;renderAdminStudents(true);toast('✅ Saved','ok',1500);}catch(x){adminErr(x);}
+}
+async function delAdminStudent(id){
+	const s=adminData.students.find(x=>x.id===id);
+	if(!confirm('Delete '+(s?s.name:'this learner')+' from the school database?'))return;
+	try{adminData=(await api('admin_del_student',{id})).data;renderAdminStudents(true);}catch(x){adminErr(x);}
+}
+
+// ── Excel / CSV import ──
+const norm=k=>String(k).toLowerCase().replace(/[._#]/g,' ').replace(/\s+/g,' ').trim();
+const HDR={name:['name','student name','learner name','full name','student','learner','pupil','pupil name'],adm:['admission number','admission no','admission','adm','adm no','admno','reg no','registration number'],dob:['date of birth','dob','birthday','birth date','birthdate'],cls:['class','form','stream','grade'],guardian:['guardian','parent','parent name','guardian name'],phone:['phone','guardian phone','parent phone','contact','tel','phone number'],email:['email','guardian email','parent email','e mail']};
+function col(row,key){for(const k of Object.keys(row)){if(HDR[key].includes(norm(k)))return row[k];}return '';}
+const p2=n=>String(n).padStart(2,'0');
+function xlDob(v){
+	if(v===''||v==null)return '';
+	if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);return d&&d.y>1950?d.y+'-'+p2(d.m)+'-'+p2(d.d):'';}
+	const s=String(v).trim();
+	if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+	return parseDob(s);
+}
+function downloadTemplate(){
+	const ws=XLSX.utils.aoa_to_sheet([['Name','Admission Number','Date of Birth','Class','Guardian','Phone'],['Amani Otieno','1001','14/03/2012','9A','Mrs Otieno','0712345678'],['Brian Kamau','1002','02/09/2012','9A','','']]);
+	const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Learners');XLSX.writeFile(wb,'viraj-class-list-template.xlsx');
+}
+async function handleAdminImport(inp){
+	const file=inp.files&&inp.files[0];if(!file)return;
+	try{
+		const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+		const dflt=$('impClass').value.trim(),list=[];let noName=0;
+		for(const sn of wb.SheetNames){
+			const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:'',raw:true});
+			const sheetCls=adminData.classes.find(c=>c.toLowerCase()===sn.trim().toLowerCase())||'';
+			for(const r of rows){
+				const name=String(col(r,'name')).trim();if(!name){noName++;continue;}
+				list.push({name,adm:String(col(r,'adm')).trim(),dob:xlDob(col(r,'dob')),cls:String(col(r,'cls')).trim()||sheetCls||dflt,guardian:String(col(r,'guardian')).trim(),phone:String(col(r,'phone')).trim(),email:String(col(r,'email')).trim()});
+			}
+		}
+		if(!list.length)return toast('⚠️ No learners found. The file needs a "Name" column (use Download template).','err',6000);
+		const by={};list.forEach(s=>{const k=s.cls||'(no class)';by[k]=(by[k]||0)+1;});
+		if(!confirm(`Import ${list.length} learner(s)?\n\n`+Object.entries(by).map(([k,v])=>`  ${k}: ${v}`).join('\n')+(noName?`\n\n(${noName} row(s) without a name will be skipped.)`:'')+'\n\nLearners with an existing admission number are updated, not duplicated.'))return;
+		const j=await api('admin_add_students',{students:list});
+		adminData=j.data;renderAdminStudents(true);
+		toast(`✅ ${j.added} added, ${j.updated} updated — tutors see them now`,'ok',6000);
+	}catch(x){adminErr(x);}finally{if(inp.value!==undefined)try{inp.value='';}catch(e){}}
+}
+
+// Admin panels load fresh data when opened
+const _nav=nav;
+nav=function(id){
+	if(id.startsWith('admin-')&&ME&&ME.role!=='admin')return alert('Admin access only.');
+	_nav(id);
+	if(id==='admin-dash')renderAdminDash();
+	if(id==='admin-users')renderAdminUsers();
+	if(id==='admin-classes')renderAdminClasses();
+	if(id==='admin-students')renderAdminStudents();
+};
+
+/// ── Boot ──
+
+authMode('in');
+['aEmail','aPass2','aCode'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')authGo();}));
+
+(async()=>{const q=new URLSearchParams(location.search).get('reset');
+if(q){RESET=q;authMode('reset');return;}
+if(TOKEN){try{await enter(await api('me'));}catch(e){SS.del('viraj_token');TOKEN='';}}})();
+</script>
+</body>
+</html>
